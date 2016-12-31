@@ -26,10 +26,10 @@ ifeq ($(CONFIG),Debug)
     TARGET_ARCH := -march=native
   endif
 
-  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DDEBUG=1 -D_DEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa freetype2 libcurl x11 xext xinerama) -pthread -I../../JuceLibraryCode -I../../../JUCE/modules
+  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DDEBUG=1 -D_DEBUG=1 -DDEBUG_BUILD=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags freetype2 libcurl x11 xext xinerama) -pthread -I../../JuceLibraryCode -I../../../JUCE/modules
   JUCE_CFLAGS += $(CFLAGS) $(JUCE_CPPFLAGS) $(TARGET_ARCH) -g -ggdb -O0
   JUCE_CXXFLAGS += $(CXXFLAGS) $(JUCE_CFLAGS) -std=c++11
-  JUCE_LDFLAGS += $(LDFLAGS) $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs alsa freetype2 libcurl x11 xext xinerama) -lGL -ldl -lpthread -lrt 
+  JUCE_LDFLAGS += $(LDFLAGS) $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) $(shell pkg-config --libs freetype2 libcurl x11 xext xinerama) -ldl -lpthread -lrt 
 
   TARGET := gudapliglibtest
   BLDCMD = $(CXX) -o $(JUCE_OUTDIR)/$(TARGET) $(OBJECTS) $(JUCE_LDFLAGS) $(RESOURCES) $(TARGET_ARCH)
@@ -46,10 +46,10 @@ ifeq ($(CONFIG),Release)
     TARGET_ARCH := -march=native
   endif
 
-  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags alsa freetype2 libcurl x11 xext xinerama) -pthread -I../../JuceLibraryCode -I../../../JUCE/modules
+  JUCE_CPPFLAGS := $(DEPFLAGS) -DLINUX=1 -DNDEBUG=1 -DJUCER_LINUX_MAKE_6D53C8B4=1 -DJUCE_APP_VERSION=1.0.0 -DJUCE_APP_VERSION_HEX=0x10000 $(shell pkg-config --cflags freetype2 libcurl x11 xext xinerama) -pthread -I../../JuceLibraryCode -I../../../JUCE/modules
   JUCE_CFLAGS += $(CFLAGS) $(JUCE_CPPFLAGS) $(TARGET_ARCH) -O3
   JUCE_CXXFLAGS += $(CXXFLAGS) $(JUCE_CFLAGS) -std=c++11
-  JUCE_LDFLAGS += $(LDFLAGS) $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) -fvisibility=hidden $(shell pkg-config --libs alsa freetype2 libcurl x11 xext xinerama) -lGL -ldl -lpthread -lrt 
+  JUCE_LDFLAGS += $(LDFLAGS) $(TARGET_ARCH) -L$(JUCE_BINDIR) -L$(JUCE_LIBDIR) -fvisibility=hidden $(shell pkg-config --libs freetype2 libcurl x11 xext xinerama) -ldl -lpthread -lrt 
 
   TARGET := gudapliglibtest
   BLDCMD = $(CXX) -o $(JUCE_OUTDIR)/$(TARGET) $(OBJECTS) $(JUCE_LDFLAGS) $(RESOURCES) $(TARGET_ARCH)
@@ -78,7 +78,6 @@ OBJECTS := \
   $(JUCE_OBJDIR)/synthGuiImages_19d26c86.o \
   $(JUCE_OBJDIR)/timeHelper_de23a8aa.o \
   $(JUCE_OBJDIR)/juce_audio_basics_6b797ca1.o \
-  $(JUCE_OBJDIR)/juce_audio_devices_a742c38b.o \
   $(JUCE_OBJDIR)/juce_audio_formats_5a29c68a.o \
   $(JUCE_OBJDIR)/juce_audio_processors_dea3173d.o \
   $(JUCE_OBJDIR)/juce_audio_utils_c7eb679f.o \
@@ -89,8 +88,6 @@ OBJECTS := \
   $(JUCE_OBJDIR)/juce_graphics_9c18891e.o \
   $(JUCE_OBJDIR)/juce_gui_basics_8a6da59c.o \
   $(JUCE_OBJDIR)/juce_gui_extra_4a026f23.o \
-  $(JUCE_OBJDIR)/juce_opengl_cd70b4c2.o \
-  $(JUCE_OBJDIR)/juce_video_f128c512.o \
 
 .PHONY: clean
 
@@ -103,7 +100,7 @@ $(JUCE_OUTDIR)/$(TARGET): check-pkg-config $(OBJECTS) $(RESOURCES)
 
 check-pkg-config:
 	@command -v pkg-config >/dev/null 2>&1 || { echo >&2 "pkg-config not installed. Please, install it."; exit 1; }
-	@pkg-config --print-errors alsa freetype2 libcurl x11 xext xinerama
+	@pkg-config --print-errors freetype2 libcurl x11 xext xinerama
 
 clean:
 	@echo Cleaning gudapliglibtest
@@ -218,11 +215,6 @@ $(JUCE_OBJDIR)/juce_audio_basics_6b797ca1.o: ../../JuceLibraryCode/juce_audio_ba
 	@echo "Compiling juce_audio_basics.cpp"
 	@$(CXX) $(JUCE_CXXFLAGS) -o "$@" -c "$<"
 
-$(JUCE_OBJDIR)/juce_audio_devices_a742c38b.o: ../../JuceLibraryCode/juce_audio_devices.cpp
-	-@mkdir -p $(JUCE_OBJDIR)
-	@echo "Compiling juce_audio_devices.cpp"
-	@$(CXX) $(JUCE_CXXFLAGS) -o "$@" -c "$<"
-
 $(JUCE_OBJDIR)/juce_audio_formats_5a29c68a.o: ../../JuceLibraryCode/juce_audio_formats.cpp
 	-@mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling juce_audio_formats.cpp"
@@ -271,16 +263,6 @@ $(JUCE_OBJDIR)/juce_gui_basics_8a6da59c.o: ../../JuceLibraryCode/juce_gui_basics
 $(JUCE_OBJDIR)/juce_gui_extra_4a026f23.o: ../../JuceLibraryCode/juce_gui_extra.cpp
 	-@mkdir -p $(JUCE_OBJDIR)
 	@echo "Compiling juce_gui_extra.cpp"
-	@$(CXX) $(JUCE_CXXFLAGS) -o "$@" -c "$<"
-
-$(JUCE_OBJDIR)/juce_opengl_cd70b4c2.o: ../../JuceLibraryCode/juce_opengl.cpp
-	-@mkdir -p $(JUCE_OBJDIR)
-	@echo "Compiling juce_opengl.cpp"
-	@$(CXX) $(JUCE_CXXFLAGS) -o "$@" -c "$<"
-
-$(JUCE_OBJDIR)/juce_video_f128c512.o: ../../JuceLibraryCode/juce_video.cpp
-	-@mkdir -p $(JUCE_OBJDIR)
-	@echo "Compiling juce_video.cpp"
 	@$(CXX) $(JUCE_CXXFLAGS) -o "$@" -c "$<"
 
 -include $(OBJECTS:%.o=%.d)
