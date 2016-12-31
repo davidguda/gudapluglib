@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<JUCERPROJECT id="tyjCoH" name="gudapliglibtest" projectType="guiapp" version="1.0.0"
+              bundleIdentifier="com.yourcompany.gudapliglibtest" includeBinaryInAppConfig="1"
+              jucerVersion="4.3.0">
+  <MAINGROUP id="yOKndV" name="gudapliglibtest">
+    <GROUP id="{858B4126-666C-A245-D65B-869A1E6CA95A}" name="Source">
+      <FILE id="cvBsNP" name="MainComponent.cpp" compile="1" resource="0"
+            file="Source/MainComponent.cpp"/>
+      <FILE id="PTlFn6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
+    </GROUP>
+    <FILE id="rkIViY" name="Colorable.cpp" compile="1" resource="0" file="../src/Colorable.cpp"/>
+    <FILE id="A6ex7q" name="Colorable.h" compile="0" resource="0" file="../src/Colorable.h"/>
+    <FILE id="WDvJzT" name="ColorSet.cpp" compile="1" resource="0" file="../src/ColorSet.cpp"/>
+    <FILE id="aqeCjO" name="ColorSet.h" compile="0" resource="0" file="../src/ColorSet.h"/>
+    <FILE id="gTZcDa" name="CommonImages.cpp" compile="1" resource="0"
+          file="../src/CommonImages.cpp"/>
+    <FILE id="tqkW1l" name="CommonImages.h" compile="0" resource="0" file="../src/CommonImages.h"/>
+    <FILE id="ThlS8k" name="debug.cpp" compile="1" resource="0" file="../src/debug.cpp"/>
+    <FILE id="UIVxIa" name="debug.h" compile="0" resource="0" file="../src/debug.h"/>
+    <FILE id="HYkPYK" name="EuterpeLookAndFeel.cpp" compile="1" resource="0"
+          file="../src/EuterpeLookAndFeel.cpp"/>
+    <FILE id="Hs431t" name="EuterpeLookAndFeel.h" compile="0" resource="0"
+          file="../src/EuterpeLookAndFeel.h"/>
+    <FILE id="Eg4mLC" name="EventAggregator.cpp" compile="1" resource="0"
+          file="../src/EventAggregator.cpp"/>
+    <FILE id="TSDOpv" name="EventAggregator.h" compile="0" resource="0"
+          file="../src/EventAggregator.h"/>
+    <FILE id="ybQdli" name="globalStuff.cpp" compile="1" resource="0" file="../src/globalStuff.cpp"/>
+    <FILE id="eUbuQd" name="globalStuff.h" compile="0" resource="0" file="../src/globalStuff.h"/>
+    <FILE id="i5WCpG" name="GuDaJuceKnob.cpp" compile="1" resource="0"
+          file="../src/GuDaJuceKnob.cpp"/>
+    <FILE id="iQZOtU" name="GuDaJuceKnob.h" compile="0" resource="0" file="../src/GuDaJuceKnob.h"/>
+    <FILE id="mD1fzg" name="GuDaJuceSlider.cpp" compile="1" resource="0"
+          file="../src/GuDaJuceSlider.cpp"/>
+    <FILE id="UO0EmQ" name="GuDaJuceSlider.h" compile="0" resource="0"
+          file="../src/GuDaJuceSlider.h"/>
+    <FILE id="Wxfy31" name="GuDaTextButton.cpp" compile="1" resource="0"
+          file="../src/GuDaTextButton.cpp"/>
+    <FILE id="rYD7ek" name="GuDaTextButton.h" compile="0" resource="0"
+          file="../src/GuDaTextButton.h"/>
+    <FILE id="uG8ZpX" name="GuDaTextMultiButton.cpp" compile="1" resource="0"
+          file="../src/GuDaTextMultiButton.cpp"/>
+    <FILE id="tm0dZ3" name="GuDaTextMultiButton.h" compile="0" resource="0"
+          file="../src/GuDaTextMultiButton.h"/>
+    <FILE id="Er9CUh" name="SplineComponent.cpp" compile="1" resource="0"
+          file="../src/SplineComponent.cpp"/>
+    <FILE id="k1UC7N" name="SplineComponent.h" compile="0" resource="0"
+          file="../src/SplineComponent.h"/>
+    <FILE id="T3Fild" name="SplineOscillator.cpp" compile="1" resource="0"
+          file="../src/SplineOscillator.cpp"/>
+    <FILE id="XGbhZ3" name="SplineOscillator.h" compile="0" resource="0"
+          file="../src/SplineOscillator.h"/>
+    <FILE id="zw8YOd" name="SplineOscillatorEditor.cpp" compile="1" resource="0"
+          file="../src/SplineOscillatorEditor.cpp"/>
+    <FILE id="FVs3iu" name="SplineOscillatorEditor.h" compile="0" resource="0"
+          file="../src/SplineOscillatorEditor.h"/>
+    <FILE id="UP2PrF" name="SplineOscillatorMisc.cpp" compile="1" resource="0"
+          file="../src/SplineOscillatorMisc.cpp"/>
+    <FILE id="tL5Vi3" name="SplineOscillatorMisc.h" compile="0" resource="0"
+          file="../src/SplineOscillatorMisc.h"/>
+    <FILE id="ga1JYd" name="StandardColors.cpp" compile="1" resource="0"
+          file="../src/StandardColors.cpp"/>
+    <FILE id="ITP54i" name="StandardColors.h" compile="0" resource="0"
+          file="../src/StandardColors.h"/>
+    <FILE id="vwuI5P" name="synthGuiImages.cpp" compile="1" resource="0"
+          file="../src/synthGuiImages.cpp"/>
+    <FILE id="r1czEP" name="synthGuiImages.h" compile="0" resource="0"
+          file="../src/synthGuiImages.h"/>
+    <FILE id="aXVLlN" name="timeHelper.cpp" compile="1" resource="0" file="../src/timeHelper.cpp"/>
+    <FILE id="g73BY5" name="timeHelper.h" compile="0" resource="0" file="../src/timeHelper.h"/>
+    <FILE id="qutEds" name="windowshacks.h" compile="0" resource="0" file="../src/windowshacks.h"/>
+  </MAINGROUP>
+  <EXPORTFORMATS>
+    <XCODE_MAC targetFolder="Builds/MacOSX">
+      <CONFIGURATIONS>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="gudapliglibtest"
+                       defines="DEBUG_BUILD = 1" cppLanguageStandard="c++11" cppLibType="libc++"
+                       osxCompatibility="10.7 SDK" osxArchitecture="64BitIntel"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="gudapliglibtest"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+      </MODULEPATHS>
+    </XCODE_MAC>
+    <LINUX_MAKE targetFolder="Builds/LinuxMakefile">
+      <CONFIGURATIONS>
+        <CONFIGURATION name="Debug" isDebug="1" optimisation="1" targetName="gudapliglibtest"/>
+        <CONFIGURATION name="Release" isDebug="0" optimisation="3" targetName="gudapliglibtest"/>
+      </CONFIGURATIONS>
+      <MODULEPATHS>
+        <MODULEPATH id="juce_core" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_events" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_graphics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_data_structures" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_gui_extra" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_cryptography" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_video" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_opengl" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_basics" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_devices" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_formats" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_processors" path="../JUCE/modules"/>
+        <MODULEPATH id="juce_audio_utils" path="../JUCE/modules"/>
+      </MODULEPATHS>
+    </LINUX_MAKE>
+  </EXPORTFORMATS>
+  <MODULES>
+    <MODULE id="juce_audio_basics" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_audio_devices" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_audio_formats" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_audio_processors" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_audio_utils" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_core" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_cryptography" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_data_structures" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_events" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_graphics" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_gui_basics" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_gui_extra" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_opengl" showAllCode="1" useLocalCopy="0"/>
+    <MODULE id="juce_video" showAllCode="1" useLocalCopy="0"/>
+  </MODULES>
+  <JUCEOPTIONS/>
+</JUCERPROJECT>
