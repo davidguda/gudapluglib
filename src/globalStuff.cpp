@@ -191,9 +191,10 @@ void debugTestFloat(double& f) {
     if(f != f) {
         DBUG(("WARNING bad float value"));
     }
-    if(isnan(f)) {
-        DBUG(("WARNING isnan!!"));
-    }
+// For some reason this won't compile on linux
+//    if(isnan(f)) {
+//        DBUG(("WARNING isnan!!"));
+//    }
     if(std::numeric_limits<double>::quiet_NaN() == f) {
         DBUG(("WARNING quiet NaN!"));
     }
