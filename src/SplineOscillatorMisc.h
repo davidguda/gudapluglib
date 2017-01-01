@@ -15,6 +15,8 @@
 #include "debug.h"
 #define MAX_OSC4_POINTS 16
 
+const int SPLINE_PARAMS_SIZE = 1024;
+
 // DET HÄR SKA INTE LAGRAS BLAND ANDRA PARAMS
 enum {
     //offsets for osc4 points

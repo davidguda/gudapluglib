@@ -190,7 +190,7 @@ class GuDaDrumRAudioProcessor;
 class SplineOscillatorEditor : public Component/*, public PointInfoTimerListener*/, public SliderListener
 {
 public:
-    SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in, GuDaDrumRAudioProcessor* owner_in, const int sectionNr_in);
+    SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in);
     ~SplineOscillatorEditor();
     
     void setSplineDataParams(double* params_in) {splineDataParams = params_in;}
@@ -227,8 +227,6 @@ protected:
 
     virtual void paint (Graphics& g);
 private:
-    const int sectionNr;
-    GuDaDrumRAudioProcessor* owner = 0;
     UpdateParamsFromPointsTimer updateParamsTimer;
     Slider* menuKnob = nullptr;
     

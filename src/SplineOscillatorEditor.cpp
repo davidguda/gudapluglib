@@ -33,8 +33,8 @@ struct PointPopupMenuData {
 
 static PointPopupMenuData global_pointPopupMenuData;
 
-SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in, GuDaDrumRAudioProcessor* owner_in, const int sectionNr_in)
- : Component(name), /*pointInfoTimer(this),*/ sectionNr(sectionNr_in), owner(owner_in), colors(colors_in), splineDataParams(splineDataParams_in)
+SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in)
+ : Component(name), /*pointInfoTimer(this),*/ colors(colors_in), splineDataParams(splineDataParams_in)
 {
     menuKnob = 0;
     eventAggregator = eventAggregator_in;
