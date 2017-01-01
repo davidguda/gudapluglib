@@ -17,7 +17,7 @@
 class PropertyProxy: public ChangeBroadcaster, ChangeListener
 {
 public:
-    PropertyProxy();
+    PropertyProxy(string name_in = "DrumR");
     ~PropertyProxy();
     
     virtual void changeListenerCallback (ChangeBroadcaster* source);
@@ -32,8 +32,9 @@ public:
     bool save();
     const File& getFile();
 private:
-        PropertiesFile* properties = nullptr;
-        PropertiesFile::Options getPropertyOptions();
+    string name;
+    PropertiesFile* properties = nullptr;
+    PropertiesFile::Options getPropertyOptions(string name);
 };
 
 

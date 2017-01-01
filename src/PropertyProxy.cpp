@@ -15,7 +15,7 @@ juce::CriticalSection globalPropertyProxyLock;
 static PropertiesFile* staticProperties = 0;
 static int proxys = 0;
 
-PropertyProxy::PropertyProxy() {
+PropertyProxy::PropertyProxy(string name_in) : name(name_in) {
     const ScopedLock sl (globalPropertyProxyLock);
     properties = nullptr;
     
@@ -24,7 +24,7 @@ PropertyProxy::PropertyProxy() {
     }
     
     if(!staticProperties) {
-        staticProperties = new PropertiesFile(getPropertyOptions());
+        staticProperties = new PropertiesFile(getPropertyOptions(name));
         if(proxys != 0) {
             DBUG(("WARNING, %i proxys but still no staticProperties", proxys));
         }
@@ -51,14 +51,14 @@ PropertyProxy::~PropertyProxy() {
     }
 }
 
-PropertiesFile::Options PropertyProxy::getPropertyOptions() {
+PropertiesFile::Options PropertyProxy::getPropertyOptions(string name) {
     PropertiesFile::Options propertyOptions;
-    propertyOptions.applicationName = "DrumR";
+    propertyOptions.applicationName = name;
     static InterProcessLock propertyFileLock("propertyFileLock");
     propertyOptions.processLock = &propertyFileLock;
     propertyOptions.commonToAllUsers = false;
     propertyOptions.osxLibrarySubFolder = "Application Support";
-    propertyOptions.folderName = "DrumR";
+    propertyOptions.folderName = name;
     propertyOptions.filenameSuffix = ".settings";
     return propertyOptions;
 }
