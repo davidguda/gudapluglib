@@ -95,8 +95,8 @@ private:
     double phase;
     int currentPoint;
     float samplesPerEnvelope;
-    Osc4Data (*osc4Data)[MAX_OSC4_POINTS]; //read as pointer to an array of size 8
-    Osc4Data modulatedPoints[MAX_OSC4_POINTS];
+    Osc4Data (*osc4Data)[MAX_OSC4_POINTS]={}; //read as pointer to an array of size 8
+    Osc4Data modulatedPoints[MAX_OSC4_POINTS]={};
     bool osc4DataSet;
     
     void sanityCheckModulatedPoints();

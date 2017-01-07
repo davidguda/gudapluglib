@@ -117,8 +117,8 @@ void GuDaTextMultiButton::paint (Graphics& g) {
     }
 
     for(int i = 0 ; i < nrOfChoices ; i++) {
-        float w = (getWidth()/nrOfChoices);
-        float x = ((getWidth()*i)/nrOfChoices) + 1;
+        float w = (getWidth()/(float)nrOfChoices);
+        float x = ((getWidth()*i)/(float)nrOfChoices) + 1;
         if(activeNr == i) {
             g.setColour (getColors()->color3);
         } else {

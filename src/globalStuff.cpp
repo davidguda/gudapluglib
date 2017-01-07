@@ -51,9 +51,8 @@ string drumTypeToName(DRUM_TYPE drumType) {
             return "dummy";
         default:
             DBUG(("WARNING: trying to get name of unkown drum"));
-            return "unknown";
     }
-    return "";
+    return "unknown";
 }
 
 //don't include DUMMY here

@@ -475,8 +475,12 @@ void EuterpeLookAndFeel::drawLinearSlider (Graphics& g,
                                     Slider& slider)
 {
     
-    
-    bool biPolar = dynamic_cast<GuDaJuceSlider*>(&slider)->isBiPolar();
+    GuDaJuceSlider* gjSlider = dynamic_cast<GuDaJuceSlider*>(&slider);
+    if(!gjSlider) {
+        DBUG(("WARNING: failed to cast GuDaJuceSlider"));
+        return;
+    }
+    bool biPolar = gjSlider->isBiPolar();
     g.fillAll (slider.findColour (Slider::backgroundColourId));
 
 //    const bool isMouseOver = slider.isMouseOverOrDragging() && slider.isEnabled();

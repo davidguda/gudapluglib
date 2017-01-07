@@ -125,9 +125,14 @@ void EventAggregator::sendEvent2(EventType event, int optionalValue)
 
 void EventAggregator::sendGlobalEvent(EventType event, int optionalValue) {
     DBUG(("event %i", event));
-    const ScopedLock sl (globalEventLock);
-    for(int i = 0 ; i < globalAggregators.size() ; i++) {
-        globalAggregators[i]->sendEvent(event, optionalValue);
+    const ScopedTryLock stl(globalEventLock);
+    
+    if(stl.isLocked()) {
+        for(int i = 0 ; i < globalAggregators.size() ; i++) {
+            globalAggregators[i]->sendEvent(event, optionalValue);
+        }
+    } else {
+        DBUG(("WARNING: failed to lock, should avoid high traffic on global events"));
     }
 }
 
@@ -201,6 +206,7 @@ void EventAggregator::deRegisterListener2(EventListener *listener) {
 //------------------ EventData -----------------
 
 EventListener::~EventListener() {
+    
     const ScopedLock esl (eventLock);
     if(eventAggregator) {
         eventAggregator->deRegisterListener(this);

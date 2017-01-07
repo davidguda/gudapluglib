@@ -44,7 +44,6 @@ public:
 protected:
     virtual void paint (Graphics& g);
 
-    int paramNr;
     bool mouseButtonDown;
     bool mouseOver;
     
