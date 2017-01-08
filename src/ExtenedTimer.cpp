@@ -54,6 +54,9 @@ void ExtendedTimer::setTimeout(function<void()> cb, const int64_t timeMs, const 
 }
 
 void ExtendedTimer::triggerTimeouts() {
+    if(callbacks.empty()) {
+        return;
+    }
     vector<CB> callNowCallbacks;//to prevent timer to be locked for new setTimeouts while calling callbacks.
     {
         const ScopedLock sl (ETlock);
