@@ -99,6 +99,8 @@ enum
 
 #define NR_OF_BANDLIMITED_OSC 12
 
+inline int float2MultiChoiceInt(const float& f) {lroundf(f*100);} 
+
 extern float bandLimitedSawtooth[NR_OF_BANDLIMITED_OSC][kWaveSize];
 extern float bandLimitedSquare[NR_OF_BANDLIMITED_OSC][kWaveSize];
 extern float triangleWave[kWaveSize];
