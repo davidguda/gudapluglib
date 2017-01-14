@@ -31,6 +31,7 @@ void SplineEnvelope::updateNrOfSamples(const int sampleFrames) {
     bufferedSampleFrames = sampleFrames;
     everUpdated = true;
     lastSampleRate = g_samplerate;
+    preparedSamples = sampleFrames;
 }
 
 bool SplineEnvelope::checkNeedToUpdate(double* splineAmplitudeData, const int sampleFrames) {
@@ -113,6 +114,7 @@ bool SplineEnvelope::updateFromBufferCacheIfNeeded() {
     bufferedSampleFrames = sampleFramesForThread;
     needToUpdateFromThreadBuffer = false;
     isReady = true;
+    preparedSamples = bufferedSampleFrames;
     return true;
 }
 

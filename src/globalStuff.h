@@ -68,6 +68,8 @@ extern double g_samplerate_double;
 
 extern float g_samplerateFactor;
 extern double g_bpm;
+extern double g_ppqPosition;
+extern bool g_isPlaying;
 
 extern bool draw_shadows;
 extern bool thin_line_knobs;

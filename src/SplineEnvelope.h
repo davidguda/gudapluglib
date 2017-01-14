@@ -14,7 +14,9 @@
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "SplineOscillator.h"
 #include "SplineOscillatorMisc.h"
-#include "SamplePlayerVoice.h"
+//#include "SamplePlayerVoice.h"
+
+#define MAX_SPLINE_ENVELOPE_LENGTH_IN_SAMPLES 96000*5
 
 //Precalculated envelope class based on SplineOscillator
 class SplineEnvelope : public Thread
@@ -22,8 +24,8 @@ class SplineEnvelope : public Thread
 public:
     SplineEnvelope()
     : Thread("SplineEnvelope"),
-      buffer(1, MAX_SAMPLE_VOICE_LENGTH_IN_SAMPLES),
-      threadBuffer(1, MAX_SAMPLE_VOICE_LENGTH_IN_SAMPLES)
+      buffer(1, MAX_SPLINE_ENVELOPE_LENGTH_IN_SAMPLES),
+      threadBuffer(1, MAX_SPLINE_ENVELOPE_LENGTH_IN_SAMPLES)
     {
         const ScopedLock sl (lock);
         splineOscillator.setOsc4Data(&osc4Data);
@@ -51,6 +53,7 @@ public:
                 startThread(0);
             } else {
                 updateNrOfSamples(sampleFrames);
+                preparedSamples = sampleFrames;
             }
         }
         isReady = true;
@@ -65,6 +68,7 @@ public:
     virtual void run() override;
     bool updateFromBufferCacheIfNeeded();//return true if updated
 
+    const int getPreparedSamples() {return preparedSamples;}
 private:
     bool checkNeedToUpdate(double* splineAmplitudeData, const int sampleFrames);
     void updateNrOfSamples(const int sampleFrames);
@@ -87,6 +91,7 @@ private:
     bool everCheckedNeedToUpdate = false;
     bool everUpdated = false;
     float lastSampleRate = 0;
+    int preparedSamples = 0;
     JUCE_LEAK_DETECTOR (SplineEnvelope)
 };
 
