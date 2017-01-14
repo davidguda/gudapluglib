@@ -35,14 +35,6 @@ public:
                                    float rotaryEndAngle,
                                    Slider& slider) override;
     
-    virtual void drawRotarySliderHexagon (Graphics& g,
-                                   int x, int y,
-                                   int width, int height,
-                                   float sliderPosProportional,
-                                   float rotaryStartAngle,
-                                   float rotaryEndAngle,
-                                   Slider& slider);
-    
     virtual void drawLinearSlider (Graphics& g,
                                    int x, int y,
                                    int width, int height,

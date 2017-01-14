@@ -122,176 +122,6 @@ void EuterpeLookAndFeel::drawTableHeaderColumn (Graphics& g, const String& colum
     g.drawFittedText (columnName, textX, 0, rightOfText - textX, height, Justification::centredLeft, 1);
 }
 
-void EuterpeLookAndFeel::drawRotarySliderHexagon (Graphics& g,
-                                           int x, int y,
-                                           int width, int height,
-                                           float sliderPos,
-                                           const float rotaryStartAngle,
-                                           const float rotaryEndAngle,
-                                           Slider& slider)
-{
-    if(draw_shadows) {
-        //to make room for shadows
-        if(width >= 30) {
-            width -= 2;
-            height -= 2;
-        } else {
-            width -= 1;
-            height -= 1;
-        }
-    }
-        
-//    const float midAngle = (rotaryStartAngle + rotaryEndAngle)/2.f;
-    const float radius = jmin (width / 2, height / 2) - 2.0f;
-    const float centreX = x + width * 0.5f + 1;
-    const float centreY = y + height * 0.5f + 1;
-    const float rx = centreX - radius;
-    const float ry = centreY - radius;
-    const float rw = radius * 2.0f;
-    
-    const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
-    
-
-    /*
-    g.setColour(colors.color2.brighter(0.1));
-    g.fillEllipse(rx +0.3, ry +0.3, rw, rw);
-    
-    g.setColour(colors.color2.darker(0.1));
-    g.fillEllipse(rx -0.3, ry -0.3, rw, rw);
-
-    g.setColour(colors.color2.darker(0.2));
-    g.fillEllipse(rx , ry , rw, rw);
-*/
-    //outer hex
-    if(true) { //if shadows and stuff...
-        Path p;
-        //p.startNewSubPath (2.f, height/2.f);
-        
-        p.addStar (Point<float>(centreX, centreY),
-                   6,
-                   radius*0.85,
-                   radius*0.75,
-                   angle);
-        
-        float offset = (width/35.);
-        
-        if(offset > 1.3f) {
-            offset = 1.3f;
-        }
-        
-        g.setColour(Colour((uint8)255,(uint8)255,(uint8)255,(uint8)32));
-        Path shadowArc = p;
-        shadowArc.applyTransform (AffineTransform::translation(-offset, -offset));
-        g.fillPath(shadowArc);
-        
-        g.setColour(Colour((uint8)0,(uint8)0,(uint8)0,(uint8)24));
-        shadowArc = p;
-        shadowArc.applyTransform (AffineTransform::translation(offset, offset));
-        g.fillPath(shadowArc);
-        
-        g.setColour(colors.color2.brighter(0.05));
-        g.fillPath(p);
-        
-        FillType fill (images.metalImage3, AffineTransform::rotation(angle, centreX, centreY));
-        fill.setOpacity(0.02);
-        g.setFillType(fill);
-        g.fillPath(p);
-        //        g.setTiledImageFill(metalImage3, 0.f, 0.f, 0.1f);
-    }
-    
-    //middle hex
-    if(true) { //if shadows and stuff...
-        Path p;
-        //p.startNewSubPath (2.f, height/2.f);
-        const float middleRadius = radius * 0.85;
-        p.addStar (Point<float>(centreX, centreY),
-                   6,
-                   middleRadius*0.85,
-                   middleRadius*0.75,
-                   angle);
-        
-        float offset = (width/45.);
-        
-        if(offset > 0.7) {
-            offset = 0.7;
-        }
-        
-        g.setColour(Colour((uint8)255,(uint8)255,(uint8)255,(uint8)48));
-        Path shadowArc = p;
-        shadowArc.applyTransform (AffineTransform::translation(offset, offset));
-        g.fillPath(shadowArc);
-        
-        g.setColour(Colour((uint8)0,(uint8)0,(uint8)0,(uint8)32));
-        shadowArc = p;
-        shadowArc.applyTransform (AffineTransform::translation(-offset, -offset));
-        g.fillPath(shadowArc);
-        
-        g.setColour(colors.color2.darker(0.1));
-        g.fillPath(p);
-        
-        FillType fill (images.metalImage3, AffineTransform::rotation(angle, centreX, centreY));
-        fill.setOpacity(0.02f);
-        g.setFillType(fill);
-        g.fillPath(p);
-        //        g.setTiledImageFill(metalImage3, 0.f, 0.f, 0.1f);
-    }
-    
-    //inner hex
-    if(true) { //if shadows and stuff...
-        Path p;
-        //p.startNewSubPath (2.f, height/2.f);
-        
-        const float innerRadius = 0.65 * radius;
-        
-        p.addStar (Point<float>(centreX, centreY),
-                   6,
-                   innerRadius*0.85,
-                   innerRadius*0.75,
-                   angle);
-        
-        float offset = (width/45.);
-        
-        if(offset > 0.7) {
-            offset = 0.7;
-        }
-        
-        g.setColour(Colour((uint8)255,(uint8)255,(uint8)255,(uint8)24));
-        Path shadowArc = p;
-        shadowArc.applyTransform (AffineTransform::translation(-offset, -offset));
-        g.fillPath(shadowArc);
-        
-        g.setColour(Colour((uint8)0,(uint8)0,(uint8)0,(uint8)24));
-        shadowArc = p;
-        shadowArc.applyTransform (AffineTransform::translation(offset, offset));
-        g.fillPath(shadowArc);
-        
-        g.setColour(colors.color2.brighter(0.05));
-        g.fillPath(p);
-        
-        FillType fill (images.metalImage3, AffineTransform::rotation(angle, centreX, centreY));
-        fill.setOpacity(0.02);
-        g.setFillType(fill);
-        g.fillPath(p);
-        //        g.setTiledImageFill(metalImage3, 0.f, 0.f, 0.1f);
-    }
-    
-    float midX = rx + (rw/2.f);
-    float midY = ry + (rw/2.f);
-    float egdeX = midX + 0.76 * (rw/2.f) * cos(angle - M_PI_2);
-    float egdeY = midY + 0.76 * (rw/2.f) * sin(angle - M_PI_2);
-    midX = midX + 0.54 * (rw/2.f) * cos(angle - M_PI_2);
-    midY = midY + 0.54 * (rw/2.f) * sin(angle - M_PI_2);
-
-    if(true || draw_shadows) {
-        g.setColour(colors.color11);
-        g.drawLine (midX+1, midY+1, egdeX+1, egdeY+1, 1.9f);
-        g.drawLine (midX+2, midY+2, egdeX+2, egdeY+2, 1.2f);
-    }
-    g.setColour(colors.color1);
-    g.drawLine (midX, midY, egdeX, egdeY, 1.9f);
-    
-}
-
 void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
                                     int x, int y,
                                     int width, int height,
@@ -300,18 +130,15 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
                                     const float rotaryEndAngle,
                                     Slider& slider)
 {
-    //drawRotarySliderHexagon(g, x, y, width, height, sliderPos, rotaryStartAngle, rotaryEndAngle, slider);
-    //return;
-    
     if(draw_shadows) {
         //to make room for shadows
-        if(width >= 30) {
-            width -= 2;
-            height -= 2;
-        } else {
+//        if(width >= 30) {
+//            width -= 2;
+//            height -= 2;
+//        } else {
             width -= 1;
             height -= 1;
-        }
+//        }
     }
     
     bool biPolar = false;
@@ -333,7 +160,7 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
 //    Colour bgColor((uint8)180, (uint8)210, (uint8)230, (uint8)128);
     
     if(draw_shadows) {
-        float offset = 1. + (width/25.);
+        float offset = 1. + (width/35.);
         g.setColour(colors.color11);
         g.fillEllipse(rx+offset, ry+offset, rw, rw);
     }
@@ -341,12 +168,12 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     g.setColour(colors.color2);
     g.fillEllipse(rx, ry, rw, rw);
     
-    if(thin_line_knobs && draw_shadows) {
-        FillType fill (images.metalImage1, AffineTransform::rotation(angle, centreX, centreY));
-        fill.setOpacity(0.05);
-        g.setFillType(fill);
-        g.fillEllipse(rx, ry, rw, rw);
-    }
+//    if(thin_line_knobs && draw_shadows) {
+//        FillType fill (images.metalImage1, AffineTransform::rotation(angle, centreX, centreY));
+//        fill.setOpacity(0.05);
+//        g.setFillType(fill);
+//        g.fillEllipse(rx, ry, rw, rw);
+//    }
     
     //Colour arcColor((uint8)80, (uint8)90, (uint8)130, (uint8)128);
 //    Colour arcColor((uint8)230, (uint8)160, (uint8)100, (uint8)255);
@@ -370,56 +197,56 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     } else {
         filledArc.addPieSegment (rx, ry, rw, rw, rotaryStartAngle, angle, thickness);
     }
-    if(draw_shadows) {
-        g.setColour(colors.color11);
-        Path shadowArc = filledArc;
-        shadowArc.applyTransform (AffineTransform::translation(1.0f, 1.0f));
-        g.fillPath (shadowArc);
-    }
+//    if(draw_shadows) {
+//        g.setColour(colors.color11);
+//        Path shadowArc = filledArc;
+//        shadowArc.applyTransform (AffineTransform::translation(1.0f, 1.0f));
+//        g.fillPath (shadowArc);
+//    }
     g.setColour(colors.color3);
     g.fillPath (filledArc);
 
-    if(thin_line_knobs && draw_shadows) {
-        float radius1[3] = {0.88f, 0.80f, 0.70f};
-        float radius2[3] = {0.78f, 0.68f, 0.55f};
-        uint8 shadow[3] = {20,15,10};
-        for(int i = 0 ; i < 3 ; i++) {
-            Path p;
-            //p.startNewSubPath (2.f, height/2.f);
-            
-            p.addStar (Point<float>(centreX, centreY),
-                       6,
-                       radius*radius1[i],
-                       radius*radius2[i],
-                       angle);
-            
-            float offset = (width/40.);
-            
-            if(offset > 0.8) {
-                offset = 0.8;
-            }
-            
-            g.setColour(Colour((uint8)255,(uint8)255,(uint8)255,(uint8)shadow[i]));
-            Path shadowArc = p;
-            shadowArc.applyTransform (AffineTransform::translation(-offset, -offset));
-            g.fillPath(shadowArc);
-            
-            g.setColour(Colour((uint8)0,(uint8)0,(uint8)0,(uint8)shadow[i]));
-            shadowArc = p;
-            shadowArc.applyTransform (AffineTransform::translation(offset, offset));
-            g.fillPath(shadowArc);
-            
-            g.setColour(colors.color2);
-            g.fillPath(p);
-            
-            
-            FillType fill (images.metalImage3, AffineTransform::rotation(angle, centreX, centreY));
-            fill.setOpacity(0.026);
-            g.setFillType(fill);
-            g.fillPath(p);
-            //        g.setTiledImageFill(metalImage3, 0.f, 0.f, 0.1f);
-        }
-    }
+//    if(thin_line_knobs && draw_shadows) {
+//        float radius1[3] = {0.88f, 0.80f, 0.70f};
+//        float radius2[3] = {0.78f, 0.68f, 0.55f};
+//        uint8 shadow[3] = {20,15,10};
+//        for(int i = 0 ; i < 3 ; i++) {
+//            Path p;
+//            //p.startNewSubPath (2.f, height/2.f);
+//            
+//            p.addStar (Point<float>(centreX, centreY),
+//                       6,
+//                       radius*radius1[i],
+//                       radius*radius2[i],
+//                       angle);
+//            
+//            float offset = (width/40.);
+//            
+//            if(offset > 0.8) {
+//                offset = 0.8;
+//            }
+//            
+//            g.setColour(Colour((uint8)255,(uint8)255,(uint8)255,(uint8)shadow[i]));
+//            Path shadowArc = p;
+//            shadowArc.applyTransform (AffineTransform::translation(-offset, -offset));
+//            g.fillPath(shadowArc);
+//            
+//            g.setColour(Colour((uint8)0,(uint8)0,(uint8)0,(uint8)shadow[i]));
+//            shadowArc = p;
+//            shadowArc.applyTransform (AffineTransform::translation(offset, offset));
+//            g.fillPath(shadowArc);
+//            
+//            g.setColour(colors.color2);
+//            g.fillPath(p);
+//            
+//            
+//            FillType fill (images.metalImage3, AffineTransform::rotation(angle, centreX, centreY));
+//            fill.setOpacity(0.026);
+//            g.setFillType(fill);
+//            g.fillPath(p);
+//            //        g.setTiledImageFill(metalImage3, 0.f, 0.f, 0.1f);
+//        }
+//    }
     
     float midX = rx + (rw/2.f);
     float midY = ry + (rw/2.f);
@@ -436,32 +263,32 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     g.drawLine (midX, midY, egdeX, egdeY, 1.7f);
     
     
-    if(draw_shadows) {
-        Path p;
-        p.startNewSubPath (2.f, height/2.f);
-        p.addArc(rx, ry, rw, rw, -3.14/2, 3.14/4.);
-        p.addArc(rx+1., ry+1., rw+0.5, rw+0.5, 3.14/4., -3.14/2);
-        const Colour c1((uint8)250, (uint8)250, (uint8)250, (uint8)48);
-        g.setColour(c1);
-        g.fillPath (p);
-        
-        Path pCopy(p);
-        
-        AffineTransform myTransform = AffineTransform::identity.rotated(3.14-(3.14/4), (width+1)/2, (height+1)/2);
-        
-        p.applyTransform (myTransform);
-        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
-        g.setColour(c2);
-        g.fillPath (p);
-        
-        
-        p=pCopy;
-        myTransform = AffineTransform::identity.rotated(3.14, (width+1)/2, (height+1)/2);
-        
-        p.applyTransform (myTransform);
-        g.setColour(c2);
-        g.fillPath (p);
-    }
+//    if(draw_shadows) {
+//        Path p;
+//        p.startNewSubPath (2.f, height/2.f);
+//        p.addArc(rx, ry, rw, rw, -3.14/2, 3.14/4.);
+//        p.addArc(rx+1., ry+1., rw+0.5, rw+0.5, 3.14/4., -3.14/2);
+//        const Colour c1((uint8)250, (uint8)250, (uint8)250, (uint8)48);
+//        g.setColour(c1);
+//        g.fillPath (p);
+//        
+//        Path pCopy(p);
+//        
+//        AffineTransform myTransform = AffineTransform::identity.rotated(3.14-(3.14/4), (width+1)/2, (height+1)/2);
+//        
+//        p.applyTransform (myTransform);
+//        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
+//        g.setColour(c2);
+//        g.fillPath (p);
+//        
+//        
+//        p=pCopy;
+//        myTransform = AffineTransform::identity.rotated(3.14, (width+1)/2, (height+1)/2);
+//        
+//        p.applyTransform (myTransform);
+//        g.setColour(c2);
+//        g.fillPath (p);
+//    }
     
 }
 

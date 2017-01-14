@@ -15,7 +15,9 @@
 float g_samplerate = 44100.f;
 double g_samplerate_double = 44100.;
 float g_samplerateFactor = 1.f; //1.f for 44.1kHz 2.f for 88.2Khz etc..
-double g_bpm = 120.f;
+double g_bpm = 120.;
+double g_ppqPosition = 0.;
+bool g_isPlaying = false;
 
 bool g_isDemoMode = true;
 string g_latestVersion = "";//default to empty, set fro networkThreads.
@@ -190,6 +192,7 @@ void debugTestFloat(double& f) {
     if(f != f) {
         DBUG(("WARNING bad float value"));
     }
+// TODO: ifdef if linux
 // For some reason this won't compile on linux
 //    if(isnan(f)) {
 //        DBUG(("WARNING isnan!!"));
