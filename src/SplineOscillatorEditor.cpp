@@ -576,6 +576,14 @@ void SplineOscillatorEditor::mouseDrag (const MouseEvent& event) {
     }
 }
 
+void SplineOscillatorEditor::sanityCheckAndFixPoints() {
+    if(firstPoint) {
+        firstPoint->sanityCheckAndFixPoints();
+    } else {
+        DBUG(("WARNIN: no firstpoint"));
+    }
+}
+
 void SplineOscillatorEditor::mouseEnter (const MouseEvent& event) {
     mouseOver = true;
     updateStates(event);
