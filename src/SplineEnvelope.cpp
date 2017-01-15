@@ -88,6 +88,7 @@ void SplineEnvelope::run() {
         }
         {
             const ScopedLock tl (threadLock);
+            
             threadSplineOscillator.reset();
             threadSplineOscillator.calculateFullEnvelope(sampleFramesForThread, threadBuffer.getWritePointer(0));
             everUpdated = true;
@@ -103,10 +104,7 @@ void SplineEnvelope::run() {
 }
 
 bool SplineEnvelope::updateFromBufferCacheIfNeeded() {
-    if(!needToUpdateFromThreadBuffer) {
-        return false ;
-    }
-    if(!threadBufferOKToCopy) {
+    if(!threadBufferOKToCopy && needToUpdateFromThreadBuffer) {
         return false;
     }
     const ScopedLock sl (lock);

@@ -223,7 +223,6 @@ public:
     function<string()> cornerInfoCallback;
     bool drawLabelsOnPoints = false;
     function<string(const float y)> pointToLabelCallback;//y is 0..1
-    void sanityCheckAndFixPoints();
 protected:
 
     virtual void paint (Graphics& g);
