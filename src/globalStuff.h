@@ -1,6 +1,6 @@
 /*
  *  globalStuff.h
- *  testSynth
+ *  assorted helper functions and stuff
  *
  *  Created by David Gunnarsson on 1/30/11.
  *  Copyright 2011 guda. All rights reserved.
