@@ -80,18 +80,16 @@ bool SplineOscillatorEditor::paramsValuesIsSane() {
     int pointNr = 0;
     
     paramStart = (kPointNumberOfValuesPerPoint * pointNr);
-    FLOAT_T active1 = splineDataParams[paramStart + kPointActive];
     FLOAT_T x1 = splineDataParams[paramStart + kPointX];
     pointNr = 1;
     paramStart = (kPointNumberOfValuesPerPoint * pointNr);
-    FLOAT_T active2 = splineDataParams[paramStart + kPointActive];
     FLOAT_T x2 = splineDataParams[paramStart + kPointX];
 
     bool saneValues = true;
-    saneValues = active1 && active2 && (x1 != x2);
+    saneValues = x1 != x2;
     if(!saneValues) {
         DBUG(("WARNING, params point values not sane"));
-        DBUG(("active1 %f active2 %f x1 %f x2 %f", active1, active2, x1, x2));
+        DBUG(("x1 %f x2 %f", x1, x2));
     }
     
     for(int pointNr = 0 ; pointNr < MAX_OSC4_POINTS ; pointNr++) {
@@ -636,6 +634,7 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         DBUG(("bad colors!"));
         return;
     }
+    
     if(!firstPoint) {
         if(paramsValuesIsSane()) {
             makePointsFromParams();
@@ -649,18 +648,9 @@ void SplineOscillatorEditor::paint(Graphics& g) {
     if(mouseOver) {
         Colour bgColour((uint8)255, (uint8)255, (uint8)255, (uint8)(8));
         g.setColour(bgColour);
-    } else {
-        Colour bgColour((uint8)0, (uint8)0, (uint8)0, (uint8)(8));
-        g.setColour(bgColour);
+        g.fillRect(0, 0, getWidth(), getHeight());
     }
-    
-    g.fillRect(0, 0, getWidth(), getHeight());
    
-    if(mouseOver) {
-        g.setColour(getColors()->color7);
-        g.drawRect(0.5f, 0.5f, getWidth()-1.f, getHeight()-1.f, 0.7f);
-    }
-    
     SplineOscillatorPoint* point = firstPoint;
     while(point) {
         for(int subPoint = 0 ; subPoint < 3 ; subPoint++) {
@@ -734,7 +724,7 @@ void SplineOscillatorEditor::paint(Graphics& g) {
     }
 
     g.setColour (getColors()->color1);
-    g.strokePath (myPath, PathStrokeType(1.f));
+    g.strokePath (myPath, PathStrokeType(2.f));
     
     
     if(cornerInfoCallback) {
@@ -1489,6 +1479,10 @@ bool SplineOscillatorPoint::sanityCheckAndFixPoints() {
     }
     
     makeSureModulationWithinLimits();
+    
+    if(isFirstPoint()) {
+        setY(y);//Will effectively enforce last point to have same Y-value if necessary
+    }
     
     return true;
 }
@@ -2591,7 +2585,6 @@ void SplineOscillatorPoint::updateValuesFromParams() {
 
     paramStart = (kPointNumberOfValuesPerPoint * pointNr);
     
-//    params[paramStart + kPointActive] = 1.;
     x = maxX * params[paramStart + kPointX];
     y = maxY * params[paramStart + kPointY];
     controlX = maxX * params[paramStart + kPointControlX];
@@ -2663,12 +2656,14 @@ void SplineOscillatorPoint::updateParamsValues() {
     int paramStart=0;
     paramStart = (kPointNumberOfValuesPerPoint * pointNr);
     
-    params[paramStart + kPointActive] = 1.;
     params[paramStart + kPointX] = x/maxX;
     if(type == LINEAR) {
         DBUG(("x/maxX %f", x/maxX));
     }
     params[paramStart + kPointY] = y/maxY;
+    
+//    DBUG(("pointNr %i, y %f", pointNr, params[paramStart + kPointY]));
+    
     params[paramStart + kPointControlX] = controlX/maxX;
     params[paramStart + kPointControlY] = controlY/maxY;
     params[paramStart + kPointControlX2] = controlX2/maxX;
@@ -2701,6 +2696,14 @@ void SplineOscillatorPoint::updateParamsValues() {
             DBUG(("WARNING, bad params value %f", params[i]));
         }
     }
+    
+//    DBUG(("params %p, paramStart %i", params, paramStart));
+//    for(int i = 0 ; i < kPointNumberOfValuesPerPoint ; i++) {
+//        DBUG(("params[%i+%i] %f", paramStart, i, params[paramStart+i]));
+//    }
+//    
+//    DBUG(("pointNr %i, y %f", pointNr, params[paramStart + kPointY]));
+
     
     if(nextPoint && !isLastPoint()) {
         nextPoint->updateParamsValues();

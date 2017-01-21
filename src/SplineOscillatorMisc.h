@@ -11,8 +11,11 @@
 #ifndef __SPLINEOSCILLATORMISC_H__
 #define __SPLINEOSCILLATORMISC_H__
 
+#include "../JuceLibraryCode/JuceHeader.h"
+
 #include <math.h>
 #include "debug.h"
+
 #define MAX_OSC4_POINTS 16
 
 const int SPLINE_PARAMS_SIZE = 1024;
@@ -20,7 +23,7 @@ const int SPLINE_PARAMS_SIZE = 1024;
 // DET HÄR SKA INTE LAGRAS BLAND ANDRA PARAMS
 enum {
     //offsets for osc4 points
-    kPointActive=0,
+//    kPointActive=0, //not used
     kPointX=1,
     kPointY=2,
     kPointControlX=3,
@@ -174,9 +177,10 @@ struct SimplePoint {
     float y;
 };
 
-extern void updateOsc4DataFromParams(Osc4Data* osc4Data, double* pointParams, SharedSplineData sharedSplineData);//osc4Data is an array of size MAX_OSC4_POINTS
+extern void updateOsc4DataFromParams(Osc4Data* osc4Data, const double* pointParams, SharedSplineData sharedSplineData);//osc4Data is an array of size MAX_OSC4_POINTS
 
-
+extern void sparseSaveToDoubleArrayFromXmlElement(const XmlElement& element, double* dataParams, const int maxNrOfElements);
+extern void sparseSaveFromDoubleArrayToXmlElement(XmlElement& data, const int maxArrayLength, double* dataParams, const string name);
 
 
 

@@ -57,6 +57,7 @@ public:
             }
         }
         isReady = true;
+        DBUG(("needToUpdate %i", needToUpdate));
         return needToUpdate;
     }
     
@@ -68,7 +69,7 @@ public:
     virtual void run() override;
     bool updateFromBufferCacheIfNeeded();//return true if updated
 
-    const int getPreparedSamples() {return preparedSamples;}
+    const int getPreparedSamples() const {return preparedSamples;}
 private:
     bool checkNeedToUpdate(double* splineAmplitudeData, const int sampleFrames);
     void updateNrOfSamples(const int sampleFrames);

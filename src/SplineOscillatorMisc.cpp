@@ -9,6 +9,7 @@
 */
 
 #include "SplineOscillatorMisc.h"
+#include "globalStuff.h"
 
 const char* SplinePointType2string (SplinePointType type) {
     switch(type) {
@@ -29,17 +30,20 @@ const char* SplinePointType2string (SplinePointType type) {
 }
 
 
-void updateOsc4DataFromParams(Osc4Data* osc4Data, double* pointParams, SharedSplineData sharedSplineData) {//osc4Data is array of size, MAX_OSC4_POINTS
+void updateOsc4DataFromParams(Osc4Data* osc4Data, const double* pointParams, SharedSplineData sharedSplineData) {//osc4Data is array of size, MAX_OSC4_POINTS
     for(int pointNr = 0 ; pointNr < MAX_OSC4_POINTS ; pointNr++) {
         osc4Data[pointNr].type = OFF;
     }
     int paramStart = 0;
     bool anyMod = false;
+
     for(int pointNr = 0 ; pointNr < MAX_OSC4_POINTS ; pointNr++) {
         paramStart = kPointNumberOfValuesPerPoint * pointNr;
-        pointParams[paramStart + kPointActive] = 1.;
         osc4Data[pointNr].x[0] = pointParams[paramStart + kPointX];
         osc4Data[pointNr].y[0] = pointParams[paramStart + kPointY];
+//        DBUG(("pointNr %i, y %f", pointNr, osc4Data[pointNr].y)); - pointParams %p, paramStart %i, kPointY %i, pointParams[paramStart + kPointY] %f", pointNr, osc4Data[pointNr].y, pointParams, paramStart, kPointY, pointParams[paramStart + kPointY]));
+        DBUG(("pointNr %i, y %f", pointNr, osc4Data[pointNr].y));
+//        DBUG(("pointParams %p, paramStart %i, kPointY %i, pointParams[paramStart + kPointY] %f", pointParams, paramStart, kPointY, pointParams[paramStart + kPointY]));
         osc4Data[pointNr].x[1] = pointParams[paramStart + kPointControlX];
         osc4Data[pointNr].y[1] = pointParams[paramStart + kPointControlY];
         osc4Data[pointNr].x[2] = pointParams[paramStart + kPointControlX2];
@@ -92,3 +96,44 @@ void updateOsc4DataFromParams(Osc4Data* osc4Data, double* pointParams, SharedSpl
 }
 
 
+void sparseSaveToDoubleArrayFromXmlElement(const XmlElement& element, double* dataParams, const int maxNrOfElements) {
+    for(int dataNr = 0 ; dataNr < maxNrOfElements; dataNr++) {
+        dataParams[dataNr] = 0.;
+    }
+    
+    forEachXmlChildElement(element, child)
+    {
+        int dataNr = stoi(child->getTagName().fromLastOccurrenceOf("_", false, false).toStdString());
+        const double value = child->getDoubleAttribute("value", 0.);
+        DBUG(("dataNr %i = %f", dataNr, value));
+        if(dataNr >= 0 && dataNr < maxNrOfElements) {
+            if(debugTestFloat(value)) {
+                dataParams[dataNr] = value;
+            }
+        } else {
+            DBUG(("WARNING: bad dataNr %i", dataNr));
+        }
+    }
+}
+
+void sparseSaveFromDoubleArrayToXmlElement(XmlElement& data, const int maxArrayLength, double* dataParams, const string name) {
+    if(!dataParams) {
+        DBUG(("WARNING: bad dataParams"));
+        return;
+    }
+    XmlElement* splineEnvelopeElement = new XmlElement(name);
+    int nrAdded = 0;
+    for(int dataNr = 0 ; dataNr < maxArrayLength ; dataNr++) {
+        if(dataParams[dataNr] != 0. && debugTestFloat(dataParams[dataNr])) {
+            nrAdded++;
+            XmlElement* splineDataElement = new XmlElement(String("data_") + to_string(dataNr));
+            splineDataElement->setAttribute("value", dataParams[dataNr]);
+            splineEnvelopeElement->addChildElement(splineDataElement);
+        }
+    }
+    data.addChildElement(splineEnvelopeElement);
+    DBUG(("added %i values", nrAdded));
+    if(nrAdded == 0) {
+        DBUG(("WARNING: no data added."));
+    }
+}

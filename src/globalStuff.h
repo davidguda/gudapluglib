@@ -70,6 +70,7 @@ extern float g_samplerateFactor;
 extern double g_bpm;
 extern double g_ppqPosition;
 extern bool g_isPlaying;
+extern int g_maxExpectedBlockSize;
 
 extern bool draw_shadows;
 extern bool thin_line_knobs;
@@ -222,11 +223,11 @@ extern inline double returnBetween(double input, double lower, double higher) {
     return input;
 }
 
-extern inline double returnBetween0and1(double input) {//common case, pass less data
-    if(input < 0.)
-        return 0.;
-    else if(input > 1.)
-        return 1.;
+template <class F> extern inline double returnBetween0and1(const F& input) {//common case, pass less data
+    if(input < (F)0.)
+        return (F)0.;
+    else if(input > (F)1.)
+        return (F)1.;
     return input;
 }
 
@@ -516,11 +517,11 @@ template<class F> extern string decimalToFraction(F f) {
 
 
 #ifdef DEBUG_BUILD
-extern void debugTestFloat(float& f);
-extern void debugTestFloat(double& f);
+extern bool debugTestFloat(const float& f);
+extern bool debugTestFloat(const double& f);
 #else
 template<class F>
-extern void inline debugTestFloat(F& f) {} //empty dummy for the compiler to optimise away
+extern bool inline debugTestFloat(const F& f) {return true;} //empty dummy for the compiler to optimise away
 #endif
 
 
