@@ -32,7 +32,6 @@ void GuDaTextMultiButton::receiveEvent(EventType event, int optionalValue) {
     }
 }
 
-
 void GuDaTextMultiButton::mouseMove (const MouseEvent& event)
 {
     mouseOver = true;
@@ -61,8 +60,23 @@ void GuDaTextMultiButton::mouseDown(const MouseEvent& event) {
     mouseButtonDown = true;
     mouseOver = true;
 
-    activeNr = (event.x*nrOfChoices)/getWidth();
-    DBUG(("activeNr %i", activeNr));
+    const int buttonPressedNr = (event.x*nrOfChoices)/getWidth();
+    DBUG(("buttonPressedNr %i", buttonPressedNr));
+
+
+    if(showEnabled) {
+        const int xInButton = event.x - (((float)buttonPressedNr/nrOfChoices)*getWidth());
+        
+        DBUG(("xInButton %i", xInButton));
+        if(xInButton < getHeight()) {
+            DBUG(("on/off!"));
+            setButtonEnabled(buttonPressedNr, !buttonEnabled[buttonPressedNr]);
+        } else {
+            setActive(buttonPressedNr);
+        }
+    } else {
+        setActive(buttonPressedNr);
+    }
     if(fn) {
         fn();
     }
@@ -72,6 +86,27 @@ void GuDaTextMultiButton::mouseDown(const MouseEvent& event) {
 void GuDaTextMultiButton::mouseUp (const MouseEvent& event) {
     mouseButtonDown = false;
     repaint();
+}
+
+const int GuDaTextMultiButton::getActiveNr() {
+    return activeNr;
+}
+
+string GuDaTextMultiButton::getActiveString() {
+    return to_string(activeNr);
+}
+
+void GuDaTextMultiButton::setActive(const int nr) {
+    activeNr = nr;
+}
+
+void GuDaTextMultiButton::setButtonEnabled(const int nr, const bool enabled) {
+    buttonEnabled[nr] = enabled;
+}
+
+void GuDaTextMultiButton::setTexts(const vector<string>& texts_in) {
+    texts = texts_in;
+    nrOfChoices = texts.size();
 }
 
 void GuDaTextMultiButton::paint (Graphics& g) {
@@ -119,7 +154,7 @@ void GuDaTextMultiButton::paint (Graphics& g) {
     for(int i = 0 ; i < nrOfChoices ; i++) {
         float w = (getWidth()/(float)nrOfChoices);
         float x = ((getWidth()*i)/(float)nrOfChoices) + 1;
-        if(activeNr == i) {
+        if(i == activeNr) {
             g.setColour (getColors()->color3);
         } else {
             g.setColour (getColors()->color5);
@@ -127,11 +162,11 @@ void GuDaTextMultiButton::paint (Graphics& g) {
         if(i == 0) {
             Path p;
 //            p.addArc(x, posY, round, round, 1.5*M_PI, 0.f);
-            p.addRoundedRectangle(x, posY, w, (float)getHeight()-2, round, round, true, false, true, false);
+            p.addRoundedRectangle(x, posY, w, (float)getHeight()-2, round, round, true, false, roundBottomCorners, false);
             g.fillPath(p);
         } else if(i == nrOfChoices-1) {
             Path p;
-            p.addRoundedRectangle(x, posY, w, (float)getHeight()-2, round, round, false, true, false, true);
+            p.addRoundedRectangle(x, posY, w, (float)getHeight()-2, round, round, false, true, false, roundBottomCorners);
             g.fillPath(p);
             g.setColour (getColors()->color7);
             g.drawLine(x, posY, x, posY+getHeight()-2);
@@ -139,6 +174,37 @@ void GuDaTextMultiButton::paint (Graphics& g) {
             g.fillRect(x, posY, w+1, (float)getHeight()-2);
             g.setColour (getColors()->color7);
             g.drawLine(x, posY, x, posY+getHeight()-2);
+        }
+        
+        if(showEnabled) {
+            float margin = getHeight() * 0.1;
+            float r = round * 0.9;
+            if(buttonEnabled[i]) {
+                g.setColour(Colour((uint8)96, (uint8)96, (uint8)96, (uint8)255));
+            } else {
+                g.setColour(Colour((uint8)48, (uint8)48, (uint8)48, (uint8)255));
+            }
+            g.fillRoundedRectangle(x+margin, posY+margin, getHeight() - (margin*2) - 1, getHeight() - (margin*2) - 1, r);
+            
+            g.setColour(Colour((uint8)16, (uint8)16, (uint8)16, (uint8)255));
+            g.drawRoundedRectangle(x+margin, posY+margin, getHeight() - (margin*2) - 1, getHeight() - (margin*2) - 1, r, 2.f);
+            
+            if(buttonEnabled[i]) {
+                g.setColour(Colour((uint8)128, (uint8)180, (uint8)128, (uint8)255));
+            } else {
+                g.setColour(Colour((uint8)120, (uint8)60, (uint8)60, (uint8)255));
+            }
+            Path arc;
+            const int arcSize = getHeight() - 15.f;
+            arc.addArc (x + 7, posY + 7,
+                        arcSize, arcSize,
+                        PI/6.f, PI+(PI*5.f/6.f),
+                        true);
+            g.strokePath (arc, PathStrokeType (2.f));
+            
+            g.drawLine(x+(getHeight()/2.f), 6,
+                       x+(getHeight()/2.f), 15,
+                       2.f);
         }
     }
     
@@ -158,15 +224,23 @@ void GuDaTextMultiButton::paint (Graphics& g) {
     }
     g.setColour (c);
     g.setFont (*labelFont);
+    if(fontSize > 0) {
+        g.setFont(fontSize);
+    }
 
     const static vector<string> notesStr = {"c", "c#", "d", "e", "e#", "f", "f#", "g", "g#", "a", "a#", "b"};
-    
+    if(texts.empty()) {
+        texts = notesStr;
+    }
     for(int i = 0 ; i < nrOfChoices ; i++) {
         int w = (getWidth()/nrOfChoices)-2;
         int x = ((getWidth()*i)/nrOfChoices) + 1;
-        g.drawFittedText (to_string(i+1) + "\n\n" + notesStr[i%12],
+        string txt = texts[i%texts.size()];
+        if(addNumberToButtons) {
+            txt = to_string(i+1) + "\n\n" + txt;
+        }
+        g.drawFittedText (txt,
                           x, 1, w, getHeight()-2,
                           Justification::centred, 1);
     }
 }
-

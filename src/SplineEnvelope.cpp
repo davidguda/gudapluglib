@@ -36,6 +36,10 @@ void SplineEnvelope::updateNrOfSamples(const int sampleFrames) {
 
 bool SplineEnvelope::checkNeedToUpdate(double* splineAmplitudeData, const int sampleFrames) {
     const ScopedLock sl (lock);
+    if(splineAmplitudeData == nullptr) {
+        DBUG(("WARNING: splineAmplitudeData is nullptr"));
+        return false;
+    }
     if(!everCheckedNeedToUpdate) {
         everCheckedNeedToUpdate = true;
         return true;

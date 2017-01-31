@@ -39,7 +39,7 @@ SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eve
     menuKnob = 0;
     eventAggregator = eventAggregator_in;
     mouseOver = false;
-    firstPoint = 0;
+    firstPoint = nullptr;
     noPaint = false;
     
     global_pointPopupMenuData.pointNr = 0;
@@ -139,6 +139,13 @@ void SplineOscillatorEditor::makeRandomPoints() {
 
     DBUG(("setting firstpoint global %p", firstPoint));
     global_pointPopupMenuData.firstPoint = firstPoint;
+}
+
+void SplineOscillatorEditor::makeDefaultPointsIfNoFirstPoint() {
+    if(!firstPoint) {
+        DBUG(("no firstPoint, resorting to makeDefaultPoints"));
+        makeDefaultPoints();
+    }
 }
 
 void SplineOscillatorEditor::makeDefaultPoints() {
@@ -578,7 +585,7 @@ void SplineOscillatorEditor::sanityCheckAndFixPoints() {
     if(firstPoint) {
         firstPoint->sanityCheckAndFixPoints();
     } else {
-        DBUG(("WARNIN: no firstpoint"));
+        DBUG(("WARNING: no firstpoint"));
     }
 }
 

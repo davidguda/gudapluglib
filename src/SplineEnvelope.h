@@ -42,6 +42,10 @@ public:
     //true if anything updated
     bool update(double* splineAmplitudeData, const int sampleFrames, const bool asyncOK = false) {
         const ScopedLock sl (lock);
+        if(splineAmplitudeData == nullptr) {
+            DBUG(("splineAmplitudeData is nullptr"));
+            return false;
+        }
         bool needToUpdate = checkNeedToUpdate(splineAmplitudeData, sampleFrames);
         if(needToUpdate) {
             updateOsc4DataFromParams(osc4Data, splineAmplitudeData, sharedSplineData);

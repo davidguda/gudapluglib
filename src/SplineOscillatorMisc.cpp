@@ -31,6 +31,10 @@ const char* SplinePointType2string (SplinePointType type) {
 
 
 void updateOsc4DataFromParams(Osc4Data* osc4Data, const double* pointParams, SharedSplineData sharedSplineData) {//osc4Data is array of size, MAX_OSC4_POINTS
+    if(pointParams == nullptr) {
+        DBUG(("WARNING: bad pointParams"));
+        return;
+    }
     for(int pointNr = 0 ; pointNr < MAX_OSC4_POINTS ; pointNr++) {
         osc4Data[pointNr].type = OFF;
     }
@@ -42,7 +46,7 @@ void updateOsc4DataFromParams(Osc4Data* osc4Data, const double* pointParams, Sha
         osc4Data[pointNr].x[0] = pointParams[paramStart + kPointX];
         osc4Data[pointNr].y[0] = pointParams[paramStart + kPointY];
 //        DBUG(("pointNr %i, y %f", pointNr, osc4Data[pointNr].y)); - pointParams %p, paramStart %i, kPointY %i, pointParams[paramStart + kPointY] %f", pointNr, osc4Data[pointNr].y, pointParams, paramStart, kPointY, pointParams[paramStart + kPointY]));
-        DBUG(("pointNr %i, y %f", pointNr, osc4Data[pointNr].y));
+//        DBUG(("pointNr %i, y %f", pointNr, osc4Data[pointNr].y));
 //        DBUG(("pointParams %p, paramStart %i, kPointY %i, pointParams[paramStart + kPointY] %f", pointParams, paramStart, kPointY, pointParams[paramStart + kPointY]));
         osc4Data[pointNr].x[1] = pointParams[paramStart + kPointControlX];
         osc4Data[pointNr].y[1] = pointParams[paramStart + kPointControlY];

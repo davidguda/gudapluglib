@@ -224,6 +224,7 @@ public:
     bool drawLabelsOnPoints = false;
     function<string(const float y)> pointToLabelCallback;//y is 0..1
     void sanityCheckAndFixPoints();
+    void makeDefaultPointsIfNoFirstPoint();
 protected:
 
     virtual void paint (Graphics& g);
