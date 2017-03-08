@@ -94,6 +94,10 @@ void ParameterShower::setText(String text, bool visibleUntilNext_in) {
     needMoreRepaint = true;
 }
 
+void ParameterShower::setText(const float f) {
+    setText(float2String(f));
+}
+
 void ParameterShower::setLongTimeText(String text) {
     setText(text);
     longTimeLeft = 30;

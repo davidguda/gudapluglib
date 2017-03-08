@@ -67,7 +67,6 @@ void EventAggregator::setInactive() {
     
 }//Before destruction to make sure no mora events are sent
 
-
 void EventAggregator::sendEvent(const EventType event, const int optionalValue, const bool allowRecursive)
 {
     const ScopedLock esl (eventLock);

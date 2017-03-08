@@ -22,6 +22,8 @@ class ParameterShower : public Component, public EventListener, public Timer
 public:
     ParameterShower(String name, shared_ptr<Font> customFont_in, shared_ptr<EventAggregator> eventAggregator_in);
     void setText(String str_in, bool visibleUntilNext_in = false);
+    void setText(const float f);
+
     void setLongTimeText(String str_in);
         
     void setMouseForwardComponent(Component* mouseForwardComponent_in);
@@ -34,6 +36,14 @@ public:
     
     virtual void timerCallback() override;
 
+    static const string float2String(const float f) {
+        char txt[8];
+        memset(txt, 0, 8);
+        sprintf(txt, "%.3f", f);
+
+        return txt;
+    }
+    
 protected:
     virtual void paint (Graphics& g) override;
 private:

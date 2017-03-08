@@ -633,6 +633,20 @@ SplineOscillatorPoint* SplineOscillatorEditor::updateStates(const MouseEvent& ev
     return 0;
 }
 
+void SplineOscillatorEditor::init() {
+    if(!firstPoint) {
+        if(paramsValuesIsSane()) {
+            makePointsFromParams();
+        } else {
+            DBUG(("should be replaced with call make default points"));
+            //            makeRandomPoints();
+            makeDefaultPoints();
+            firstPoint->updateParamsValues();
+        }
+    }
+    initRun = true;
+}
+
 void SplineOscillatorEditor::paint(Graphics& g) {
     if(noPaint) {
         return;
@@ -641,17 +655,11 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         DBUG(("bad colors!"));
         return;
     }
-    
-    if(!firstPoint) {
-        if(paramsValuesIsSane()) {
-            makePointsFromParams();
-        } else {
-            DBUG(("should be replaced with call make default points"));
-//            makeRandomPoints();
-            makeDefaultPoints();
-            firstPoint->updateParamsValues();
-        }
+    if(!initRun) {
+        DBUG(("WARNING: not run init()"));
+        return;
     }
+
     if(mouseOver) {
         Colour bgColour((uint8)255, (uint8)255, (uint8)255, (uint8)(8));
         g.setColour(bgColour);

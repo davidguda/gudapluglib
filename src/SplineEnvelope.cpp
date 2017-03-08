@@ -22,8 +22,23 @@ void SplineEnvelope::updateFromCachedData(const int sampleFrames) {
     }
 }
 
+void SplineEnvelope::expandBufferIfNeeded(const int leastNrOfSamples) {
+    const int newNrOfSamples = jmax(leastNrOfSamples, threadBuffer.getNumSamples());
+    
+    if(buffer.getNumSamples() < newNrOfSamples) {
+        DBUG(("buffer.getNumSamples() %i, threadBuffer.getNumSamples() %i, leastNrOfSamples %i, newNrOfSamples %i", buffer.getNumSamples(), threadBuffer.getNumSamples(), leastNrOfSamples, newNrOfSamples));
+        buffer.setSize (buffer.getNumChannels(),
+                        newNrOfSamples,
+                        false,
+                        true,
+                        true);
+        buffer.clear();
+    }
+}
+
 void SplineEnvelope::updateNrOfSamples(const int sampleFrames) {
     const ScopedLock sl (lock);
+    expandBufferIfNeeded(sampleFrames);
     buffer.clear(0, sampleFrames);
     sharedSplineData.needToSyncValue = true;
     splineOscillator.reset();
@@ -92,6 +107,7 @@ void SplineEnvelope::run() {
         }
         {
             const ScopedLock tl (threadLock);
+            expandThreadBufferIfNeeded();
             threadSplineOscillator.reset();
             threadSplineOscillator.calculateFullEnvelope(sampleFramesForThread, threadBuffer.getWritePointer(0));
             everUpdated = true;
@@ -106,6 +122,18 @@ void SplineEnvelope::run() {
     } while (needReRunThread);
 }
 
+void SplineEnvelope::expandThreadBufferIfNeeded() {
+    if(threadBuffer.getNumSamples() < sampleFramesForThread) {
+        DBUG(("Need to allocate more memory for buffer"));
+        threadBuffer.setSize (threadBuffer.getNumChannels(),
+                              sampleFramesForThread + (sampleFramesForThread*0.5), //allocate 50% more samples than needed so I don't have to reallocate too soon again
+                              false,
+                              true,
+                              true);
+    }
+}
+
+//don't call this while using the buffers since they can be reallocated
 bool SplineEnvelope::updateFromBufferCacheIfNeeded() {
     if(!needToUpdateFromThreadBuffer) {
         return false ;
@@ -116,6 +144,10 @@ bool SplineEnvelope::updateFromBufferCacheIfNeeded() {
     const ScopedLock sl (lock);
     DBGRAII;
     isReady = false;
+    
+    expandThreadBufferIfNeeded();
+    expandBufferIfNeeded(threadBuffer.getNumSamples());
+    
     buffer.copyFrom(0, 0, threadBuffer.getReadPointer(0), sampleFramesForThread);
     bufferedSampleFrames = sampleFramesForThread;
     needToUpdateFromThreadBuffer = false;

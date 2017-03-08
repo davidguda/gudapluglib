@@ -102,7 +102,7 @@ enum
 
 #define NR_OF_BANDLIMITED_OSC 12
 
-inline int float2MultiChoiceInt(const float& f) {return lroundf(f*100);}
+inline const int float2MultiChoiceInt(const float& f) {return lroundf(f*100);}
 
 extern float bandLimitedSawtooth[NR_OF_BANDLIMITED_OSC][kWaveSize];
 extern float bandLimitedSquare[NR_OF_BANDLIMITED_OSC][kWaveSize];
@@ -215,11 +215,18 @@ extern inline float normalRandomBetween(const float lower, const float higher) {
     return lower + normalRandom0To1()*(higher-lower);
 }
 
-extern inline double returnBetween(double input, double lower, double higher) {
+template <class F> extern inline double returnBetween(const F input, const F lower, const F higher) {
     if(input < lower)
         return lower;
     else if(input > higher)
         return higher;
+    return input;
+}
+
+template <class F> extern inline double returnBelow(const F input, const F roof) {
+    if(input > roof) {
+        return roof;
+    }
     return input;
 }
 

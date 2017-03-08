@@ -46,6 +46,20 @@ public:
             DBUG(("splineAmplitudeData is nullptr"));
             return false;
         }
+#ifdef DEBUG_BUILD
+        bool onlyZero = true;
+        for(int i = 0 ; i < SPLINE_PARAMS_SIZE ; i++) {
+            if(splineAmplitudeData[i] != 0) {
+                onlyZero = false;
+                break;
+            }
+        }
+        if(onlyZero) {
+            DBUG(("WARNING: splineAmplitudeData not initialized"));
+            return false;
+        }
+
+#endif
         bool needToUpdate = checkNeedToUpdate(splineAmplitudeData, sampleFrames);
         if(needToUpdate) {
             updateOsc4DataFromParams(osc4Data, splineAmplitudeData, sharedSplineData);
@@ -97,6 +111,9 @@ private:
     bool everUpdated = false;
     float lastSampleRate = 0;
     int preparedSamples = 0;
+    
+    void expandThreadBufferIfNeeded();
+    void expandBufferIfNeeded(const int leastNrOfSamples);
     JUCE_LEAK_DETECTOR (SplineEnvelope)
 };
 

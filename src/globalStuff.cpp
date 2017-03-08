@@ -18,7 +18,7 @@ float g_samplerateFactor = 1.f; //1.f for 44.1kHz 2.f for 88.2Khz etc..
 double g_bpm = 120.;
 double g_ppqPosition = 0.;
 bool g_isPlaying = false;
-int g_maxExpectedBlockSize = 4096;
+int g_maxExpectedBlockSize = 4096; //This is from prepareToPlay in pluginPorcessor and won't be exact. More like rough guideline
 
 bool g_isDemoMode = true;
 string g_latestVersion = "";//default to empty, set fro networkThreads.

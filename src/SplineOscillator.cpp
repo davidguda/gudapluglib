@@ -304,7 +304,7 @@ void SplineOscillator::setOsc4Data(Osc4Data (*osc4Data_in)[MAX_OSC4_POINTS]) {
 
 void SplineOscillator::setSharedSplineData(SharedSplineData* sharedSplineData_in) {
     if(okPointer(sharedSplineData_in)) {
-        DBUG(("sharedSplineData_in %p", sharedSplineData_in));
+//        DBUG(("sharedSplineData_in %p", sharedSplineData_in));
         sharedSplineData = sharedSplineData_in;
     } else {
         DBUG(("WARNING, bad sharedSplineData %p", sharedSplineData));

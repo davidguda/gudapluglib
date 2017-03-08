@@ -193,6 +193,8 @@ public:
     SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in);
     ~SplineOscillatorEditor();
     
+    void init();
+    
     void setSplineDataParams(double* params_in) {splineDataParams = params_in;}
     void setMenuKnob(Slider* knob_in) {menuKnob = knob_in;}
     
@@ -250,6 +252,7 @@ private:
     EventAggregator* eventAggregator;
     
     bool noPaint;
+    bool initRun = false;
     JUCE_LEAK_DETECTOR (SplineOscillatorEditor)
 };
 

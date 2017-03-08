@@ -136,7 +136,7 @@ void sparseSaveFromDoubleArrayToXmlElement(XmlElement& data, const int maxArrayL
         }
     }
     data.addChildElement(splineEnvelopeElement);
-    DBUG(("added %i values", nrAdded));
+    DBUG(("added %i values - %s", nrAdded, name.c_str()));
     if(nrAdded == 0) {
         DBUG(("WARNING: no data added."));
     }
