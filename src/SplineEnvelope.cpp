@@ -43,6 +43,9 @@ void SplineEnvelope::updateNrOfSamples(const int sampleFrames) {
     sharedSplineData.needToSyncValue = true;
     splineOscillator.reset();
     splineOscillator.calculateFullEnvelope(sampleFrames, buffer.getWritePointer(0));
+    if(shouldSquareResults) {
+        squareBuffer(buffer, sampleFrames);
+    }
     bufferedSampleFrames = sampleFrames;
     everUpdated = true;
     lastSampleRate = g_samplerate;
@@ -110,6 +113,9 @@ void SplineEnvelope::run() {
             expandThreadBufferIfNeeded();
             threadSplineOscillator.reset();
             threadSplineOscillator.calculateFullEnvelope(sampleFramesForThread, threadBuffer.getWritePointer(0));
+            if(shouldSquareResults) {
+                squareBuffer(threadBuffer, sampleFramesForThread);
+            }
             everUpdated = true;
         }
         
@@ -156,9 +162,6 @@ bool SplineEnvelope::updateFromBufferCacheIfNeeded() {
     return true;
 }
 
-
-
-
-
-
-
+void SplineEnvelope::squareBuffer(AudioSampleBuffer& buf, const int sampleFrames) {
+    FloatVectorOperations::multiply(buf.getWritePointer(0), buf.getReadPointer(0), sampleFrames);
+}

@@ -104,6 +104,8 @@ enum
 
 inline const int float2MultiChoiceInt(const float& f) {return lroundf(f*100);}
 
+inline const float floatToHz(const float f) {return f*f*22050;};//exponential 0..1 -> 0..22050hz
+
 extern float bandLimitedSawtooth[NR_OF_BANDLIMITED_OSC][kWaveSize];
 extern float bandLimitedSquare[NR_OF_BANDLIMITED_OSC][kWaveSize];
 extern float triangleWave[kWaveSize];

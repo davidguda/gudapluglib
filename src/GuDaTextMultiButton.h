@@ -67,11 +67,11 @@ protected:
     bool mouseButtonDown;
     int mouseButtonDownNr = 0;
     bool mouseOver;
-    int mouseOverNr = 0;
+    int mouseOverNr = -1;
+    void calculateMouseOver(const MouseEvent& event);
     
     shared_ptr<Font> labelFont;
     void updateShownValue();
-    GuDaTextButtonListener* listener;
 };
 
 

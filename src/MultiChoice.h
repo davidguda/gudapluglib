@@ -22,7 +22,8 @@
 
 using namespace std;
 
-const int MULTICHOICE_HEIGHT = 11;
+//const int MULTICHOICE_HEIGHT = 11;
+const int MULTICHOICE_HEIGHT = 13;
 
 class MultiChoice : public Colorable
 {

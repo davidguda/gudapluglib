@@ -23,11 +23,10 @@
 
 using namespace std;
 
-class GuDaTextButtonListener;
 class GuDaTextButton : public Colorable
 {
 public:
-    GuDaTextButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, GuDaTextButtonListener* listener_in, bool isToggle = false, bool shouldDrawLabel = true, bool verticleText_in = false);
+    GuDaTextButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, function<void(GuDaTextButton*)> cb, bool isToggle = false, bool shouldDrawLabel = true, bool verticleText_in = false);
     ~GuDaTextButton() {}
     virtual void mouseMove (const MouseEvent& event);
     virtual void mouseEnter (const MouseEvent& event);
@@ -49,20 +48,14 @@ protected:
     
     shared_ptr<Font> labelFont;
     void updateShownValue();
-    GuDaTextButtonListener* listener;
     bool isToggleButton;
     bool toggleState;
     bool drawLabel = true;
     bool verticleText = false;
+    function <void(GuDaTextButton*)> updateCallback;
     JUCE_LEAK_DETECTOR (GuDaTextButton)
 };
 
-class GuDaTextButtonListener {
-public:
-    virtual void GuDaTextButtonCallback(GuDaTextButton* b) = 0;
-    virtual ~GuDaTextButtonListener(){}
-    JUCE_LEAK_DETECTOR (GuDaTextButtonListener)
-};
 
 
 #endif  // GUDATEXTBUTTON_H_INCLUDED

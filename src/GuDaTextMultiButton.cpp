@@ -36,18 +36,19 @@ void GuDaTextMultiButton::mouseMove (const MouseEvent& event)
 {
     mouseOver = true;
     repaint();
-    //    DBGF;
+    calculateMouseOver(event);
 }
 
 void GuDaTextMultiButton::mouseEnter(const MouseEvent& event) {
     mouseButtonDown = false;
     mouseOver = true;
-    //    DBGF;
+    calculateMouseOver(event);
 }
 
 void GuDaTextMultiButton::mouseExit(const MouseEvent&/* event*/) {
     mouseButtonDown = false;
     mouseOver = false;
+    mouseOverNr = -1;
     repaint();
 }
 
@@ -59,10 +60,10 @@ void GuDaTextMultiButton::mouseDown(const MouseEvent& event) {
     DBGF;
     mouseButtonDown = true;
     mouseOver = true;
+    mouseOverNr = -1;
 
     const int buttonPressedNr = (event.x*nrOfChoices)/getWidth();
     DBUG(("buttonPressedNr %i", buttonPressedNr));
-
 
     if(showEnabled) {
         const int xInButton = event.x - (((float)buttonPressedNr/nrOfChoices)*getWidth());
@@ -80,12 +81,24 @@ void GuDaTextMultiButton::mouseDown(const MouseEvent& event) {
     if(fn) {
         fn();
     }
-    return;//Don't want repaint after sendUpdateEvent() since this button might be deleted
 }
 
 void GuDaTextMultiButton::mouseUp (const MouseEvent& event) {
     mouseButtonDown = false;
     repaint();
+}
+
+void GuDaTextMultiButton::calculateMouseOver(const MouseEvent& event) {
+    mouseOverNr = (event.x*nrOfChoices)/getWidth();
+    if(showEnabled) {
+        const int xInButton = event.x - (((float)mouseOverNr/nrOfChoices)*getWidth());
+        
+        DBUG(("xInButton %i", xInButton));
+        if(xInButton < getHeight()) {
+            mouseOverNr = -1;
+            return;
+        }
+    }
 }
 
 const int GuDaTextMultiButton::getActiveNr() {
@@ -124,56 +137,58 @@ void GuDaTextMultiButton::paint (Graphics& g) {
     
     float round = 6.f;
     
-    if(draw_shadows) {
-        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
-        g.setColour (c);
-        g.fillRoundedRectangle((float)0, (float)0, (float)getWidth()-2, (float)getHeight()-2, round);
-        
-        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
-        g.setColour (c2);
-        g.fillRoundedRectangle((float)2, (float)2, (float)getWidth()-2, (float)getHeight()-2, round);
-    }
+//    if(draw_shadows) {
+//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
+//        g.setColour (c);
+//        g.fillRoundedRectangle((float)0, (float)0, (float)getWidth()-2, (float)getHeight()-2, round);
+//        
+//        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
+//        g.setColour (c2);
+//        g.fillRoundedRectangle((float)2, (float)2, (float)getWidth()-2, (float)getHeight()-2, round);
+//    }
     
-    float posX = 1.f;
-    float posY = 1.f;
+//    float posX = 1.f;
+    float posY = 0.f;
     
-    bool isDown = mouseButtonDown;
-    if(isDown) {
-        g.setColour (getColors()->color3);
-        posX = posY = 1.5f;
-    } else if(mouseOver) {
-        g.setColour (getColors()->color2);
-    } else {
-        Colour c = getColors()->color5;
-        if(!isEnabled()) {
-            c = c.withAlpha(0.2f);
-        }
-        g.setColour (c);
-    }
+//    bool isDown = mouseButtonDown;
+//    if(isDown) {
+//        g.setColour (getColors()->color3);
+////        posX = posY = 1.5f;
+//    } else if(mouseOver) {
+//        g.setColour (getColors()->color2);
+//    } else {
+//        Colour c = getColors()->color5;
+//        if(!isEnabled()) {
+//            c = c.withAlpha(0.2f);
+//        }
+//        g.setColour (c);
+//    }
 
     for(int i = 0 ; i < nrOfChoices ; i++) {
         float w = (getWidth()/(float)nrOfChoices);
         float x = ((getWidth()*i)/(float)nrOfChoices) + 1;
         if(i == activeNr) {
             g.setColour (getColors()->color3);
+        } else if (i == mouseOverNr) {
+            g.setColour (getColors()->color2);
         } else {
             g.setColour (getColors()->color5);
         }
         if(i == 0) {
             Path p;
 //            p.addArc(x, posY, round, round, 1.5*M_PI, 0.f);
-            p.addRoundedRectangle(x, posY, w, (float)getHeight()-2, round, round, true, false, roundBottomCorners, false);
+            p.addRoundedRectangle(x, posY, w, (float)getHeight()-1, round, round, true, false, roundBottomCorners, false);
             g.fillPath(p);
         } else if(i == nrOfChoices-1) {
             Path p;
-            p.addRoundedRectangle(x, posY, w, (float)getHeight()-2, round, round, false, true, false, roundBottomCorners);
+            p.addRoundedRectangle(x, posY, w, (float)getHeight()-1, round, round, false, true, false, roundBottomCorners);
             g.fillPath(p);
             g.setColour (getColors()->color7);
-            g.drawLine(x, posY, x, posY+getHeight()-2);
+            g.drawLine(x, posY, x, posY+getHeight()-1);
         } else {
-            g.fillRect(x, posY, w+1, (float)getHeight()-2);
+            g.fillRect(x, posY, w+1, (float)getHeight()-1);
             g.setColour (getColors()->color7);
-            g.drawLine(x, posY, x, posY+getHeight()-2);
+            g.drawLine(x, posY, x, posY+getHeight()-1);
         }
         
         if(showEnabled) {
@@ -208,15 +223,15 @@ void GuDaTextMultiButton::paint (Graphics& g) {
         }
     }
     
-    if(draw_shadows) {
-        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)32);
-        g.setColour (c2);
-        g.drawRoundedRectangle(posX+0.7, posY+0.7, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
-        
-        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)32);
-        g.setColour (c);
-        g.drawRoundedRectangle(posX+1.1, posY+1.1, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
-    }
+//    if(draw_shadows) {
+//        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)32);
+//        g.setColour (c2);
+//        g.drawRoundedRectangle(posX+0.7, posY+0.7, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
+//        
+//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)32);
+//        g.setColour (c);
+//        g.drawRoundedRectangle(posX+1.1, posY+1.1, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
+//    }
     
     Colour c = getColors()->color12;
     if(!isEnabled()) {

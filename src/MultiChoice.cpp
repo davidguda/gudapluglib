@@ -219,53 +219,56 @@ void MultiChoice::paint (Graphics& g) {
 //    Colour colourOver((uint8)130, (uint8)160, (uint8)180, (uint8)196);
 //    Colour colourDown((uint8)120, (uint8)110, (uint8)100, (uint8)196);
     
+    const float height = getHeight()-1;
+    const float width = getWidth()-1;
+    
     if(mouseButtonDown) {
         if(overLeftPart) {
             //DBUG(("button down left "));
             g.setColour (getColors()->color3);
-            g.fillRect(0.f, 0.f, getWidth()/2.f, (float)getHeight());
+            g.fillRect(0.f, 0.f, width/2.f, height);
             g.setColour (getColors()->color5);
-            g.fillRect((float)getWidth()/2.f, 0.f, getWidth()/2.f, (float)getHeight());
+            g.fillRect(width/2.f, 0.f, getWidth()/2.f, height);
         } else {
             //DBUG(("button down right "));
             g.setColour (getColors()->color5);
-            g.fillRect(0.f, 0.f, getWidth()/2.f, (float)getHeight());
+            g.fillRect(0.f, 0.f, width/2.f, height);
             g.setColour (getColors()->color3);
-            g.fillRect((float)getWidth()/2.f, 0.f, getWidth()/2.f, (float)getHeight());
+            g.fillRect(width/2.f, 0.f, width/2.f, height);
         }
     } else if(overLeftPart) {
         //DBUG(("mouse over left part "));
         g.setColour (getColors()->color2);
-        g.fillRect((float)0, (float)0, getWidth()/2.f, (float)getHeight());
+        g.fillRect((float)0, (float)0, width/2.f, height);
         g.setColour (getColors()->color5);
-        g.fillRect(getWidth()/2.f, 0.f, getWidth()/2.f, (float)getHeight());
+        g.fillRect(getWidth()/2.f, 0.f, width/2.f, height);
     } else if(overRightPart) {
         //DBUG(("mouse over right part "));
         g.setColour (getColors()->color5);
-        g.fillRect(0, 0, getWidth()/2, getHeight());
+        g.fillRect(0, 0, (int)width/2, (int)height);
         g.setColour (getColors()->color2);
-        g.fillRect(getWidth()/2.f, 0.f, getWidth()/2.f, (float)getHeight());
+        g.fillRect(getWidth()/2.f, 0.f, width/2.f, height);
     } else {
         //DBUG(("mouse somewhere outside"));
         g.setColour (getColors()->color5);
-        g.fillRect((float)0, (float)0, (float)getWidth(), (float)getHeight());
+        g.fillRect((float)0, (float)0, width, height);
     }
     
     g.setColour (getColors()->color12);
     g.setFont (*labelFont);
     g.drawFittedText (getCurrentShortText(),
-                      1, 1, getWidth()-2, getHeight()-2,
+                      1, 1, width-2, height-2,
                       Justification::centred, 1);
     
     if(draw_shadows) {
-        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
-        g.setColour (c);
-        g.drawLine(0.f, 0.f, getWidth(), 0.f);
-        g.drawLine(0.f, 0.f, 0.f, (float)getHeight());
+//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
+//        g.setColour (c);
+//        g.drawLine(0.f, 0.f, getWidth(), 0.f);
+//        g.drawLine(0.f, 0.f, 0.f, (float)getHeight());
         const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
         g.setColour (c2);
-        g.drawLine(0.f, (float)getHeight(), (float)getWidth(), (float)getHeight());
-        g.drawLine((float)getWidth(), 0.f, (float)getWidth(), (float)getHeight());
+        g.drawLine(1.f, (float)getHeight(), (float)getWidth(), (float)getHeight());
+        g.drawLine((float)getWidth(), 1.f, (float)getWidth(), (float)getHeight());
     }
     
 }

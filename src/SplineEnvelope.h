@@ -39,6 +39,10 @@ public:
         waitForThreadToExit(1000);
     }
     
+    void setShouldSquareResults(const bool square) {
+        shouldSquareResults = square;
+    }
+    
     //true if anything updated
     bool update(double* splineAmplitudeData, const int sampleFrames, const bool asyncOK = false) {
         const ScopedLock sl (lock);
@@ -111,6 +115,8 @@ private:
     bool everUpdated = false;
     float lastSampleRate = 0;
     int preparedSamples = 0;
+    bool shouldSquareResults = false;//useful when wanting exponential result for filters etc.
+    void squareBuffer(AudioSampleBuffer& buf, const int sampleFrames);
     
     void expandThreadBufferIfNeeded();
     void expandBufferIfNeeded(const int leastNrOfSamples);

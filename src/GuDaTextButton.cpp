@@ -16,8 +16,8 @@
 #include "EventAggregator.h"
 #include "debug.h"
 
-GuDaTextButton::GuDaTextButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, GuDaTextButtonListener* listener_in, bool isToggle, bool shouldDrawLabel, bool verticleText_in)
-: Colorable(compName, eventAggregator_in), mouseOver(false), listener(listener_in), isToggleButton(isToggle), toggleState(false), drawLabel(shouldDrawLabel), verticleText(verticleText_in) //, label(compName, compName)
+GuDaTextButton::GuDaTextButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, function<void(GuDaTextButton*)> cb, bool isToggle, bool shouldDrawLabel, bool verticleText_in)
+: Colorable(compName, eventAggregator_in), mouseOver(false), isToggleButton(isToggle), toggleState(false), drawLabel(shouldDrawLabel), verticleText(verticleText_in), updateCallback(cb) //, label(compName, compName)
 {
     mouseButtonDown = false;
     
@@ -78,7 +78,8 @@ void GuDaTextButton::mouseDown(const MouseEvent& event) {
 }
 
 void GuDaTextButton::sendUpdateEvent() {
-    listener->GuDaTextButtonCallback(this);
+//    listener->GuDaTextButtonCallback(this);
+    updateCallback(this);
 }
 
 void GuDaTextButton::mouseUp (const MouseEvent& event) {
@@ -102,9 +103,9 @@ void GuDaTextButton::paint (Graphics& g) {
     float round = 6.f;
     
     if(draw_shadows) {
-        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
-        g.setColour (c);
-        g.fillRoundedRectangle((float)0, (float)0, (float)getWidth()-2, (float)getHeight()-2, round);
+//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
+//        g.setColour (c);
+//        g.fillRoundedRectangle((float)0, (float)0, (float)getWidth()-2, (float)getHeight()-2, round);
 
         const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
         g.setColour (c2);
@@ -141,16 +142,15 @@ void GuDaTextButton::paint (Graphics& g) {
     }
     g.fillRoundedRectangle(posX, posY, (float)getWidth()-2, (float)getHeight()-2, round);
 
-    if(draw_shadows) {
-        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)32);
-        g.setColour (c2);
-        g.drawRoundedRectangle(posX+0.7, posY+0.7, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
-
-        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)32);
-        g.setColour (c);
-        g.drawRoundedRectangle(posX+1.1, posY+1.1, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
-        
-    }
+//    if(draw_shadows) {
+//        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)32);
+//        g.setColour (c2);
+//        g.drawRoundedRectangle(posX+0.7, posY+0.7, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
+//
+//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)32);
+//        g.setColour (c);
+//        g.drawRoundedRectangle(posX+1.1, posY+1.1, (float)getWidth()-4, (float)getHeight()-3, round, 0.4f);
+//    }
     
     Colour c = getColors()->color12;
     if(!isEnabled()) {

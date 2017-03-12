@@ -159,8 +159,9 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     
 //    Colour bgColor((uint8)180, (uint8)210, (uint8)230, (uint8)128);
     
+    //full circle shadow
     if(draw_shadows) {
-        float offset = 1. + (width/35.);
+        float offset = 1. + (width/50.);
         g.setColour(colors.color11);
         g.fillEllipse(rx+offset, ry+offset, rw, rw);
     }
@@ -257,7 +258,7 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     if(draw_shadows) {
         g.setColour(colors.color11);
         g.drawLine (midX+1, midY+1, egdeX+1, egdeY+1, 1.7f);
-        g.drawLine (midX+2, midY+2, egdeX+2, egdeY+2, 1.0f);
+//        g.drawLine (midX+2, midY+2, egdeX+2, egdeY+2, 1.0f);
     }
     g.setColour(colors.color1);
     g.drawLine (midX, midY, egdeX, egdeY, 1.7f);
@@ -368,10 +369,10 @@ Font EuterpeLookAndFeel::getTextButtonFont (TextButton& button, int buttonHeight
 }
 
 void EuterpeLookAndFeel::drawButtonBackground (Graphics& g, Button& button, const Colour& backgroundColour, bool isMouseOverButton, bool isButtonDown) {
-    if(draw_shadows && !isButtonDown) {
-        g.setColour (colors.color11);
-        g.fillRoundedRectangle(1.5, 1.5, button.getWidth()-2, button.getHeight()-2, 12.f);
-    }
+//    if(draw_shadows && !isButtonDown) {
+//        g.setColour (colors.color11);
+//        g.fillRoundedRectangle(1.5, 1.5, button.getWidth()-2, button.getHeight()-2, 12.f);
+//    }
     
     if(button.isEnabled()) {
         g.setColour (colors.color7);
@@ -379,11 +380,11 @@ void EuterpeLookAndFeel::drawButtonBackground (Graphics& g, Button& button, cons
         g.setColour (colors.color7.withMultipliedAlpha(0.5));
     }
 
-    if(isButtonDown) {
-        g.fillRoundedRectangle(1, 1, button.getWidth()-2, button.getHeight()-2, 12.f);
-    } else {
+//    if(isButtonDown) {
+//        g.fillRoundedRectangle(1, 1, button.getWidth()-2, button.getHeight()-2, 12.f);
+//    } else {
         g.fillRoundedRectangle(0., 0., button.getWidth()-2, button.getHeight()-2, 12.f);
-    }
+//    }
 
     if(isButtonDown) {
         g.setColour (colors.color3);
@@ -393,18 +394,18 @@ void EuterpeLookAndFeel::drawButtonBackground (Graphics& g, Button& button, cons
         g.setColour (colors.color5);
     }
     
-    if(isButtonDown) {
-        g.fillRoundedRectangle(3.2f, 3.2f, button.getWidth()-4.4f-2, button.getHeight()-4.4f-2, 12.f);
-    } else {
+//    if(isButtonDown) {
+//        g.fillRoundedRectangle(3.2f, 3.2f, button.getWidth()-4.4f-2, button.getHeight()-4.4f-2, 12.f);
+//    } else {
         g.fillRoundedRectangle(2.2f, 2.2f, button.getWidth()-4.4f-2, button.getHeight()-4.4f-2, 12.f);
-    }
+//    }
     
-    if(draw_shadows) {//structure
-        FillType fill (images.metalImage3, AffineTransform::identity);
-        fill.setOpacity(0.03);
-        g.setFillType(fill);
-        g.fillRoundedRectangle(2.2f, 2.2f, button.getWidth()-4.4f-2, button.getHeight()-4.4f-2, 12.f);
-    }
+//    if(draw_shadows) {//structure
+//        FillType fill (images.metalImage3, AffineTransform::identity);
+//        fill.setOpacity(0.03);
+//        g.setFillType(fill);
+//        g.fillRoundedRectangle(2.2f, 2.2f, button.getWidth()-4.4f-2, button.getHeight()-4.4f-2, 12.f);
+//    }
     
     
 //    g.setColour (colors.color7);
@@ -439,13 +440,13 @@ void EuterpeLookAndFeel::drawButtonText (Graphics& g, TextButton& button, bool i
     const int rightIndent = jmin (fontHeight, 2 + cornerSize / (button.isConnectedOnRight() ? 4 : 2));
     
     float extra = 0;
-    if(draw_shadows) {
-        if(isButtonDown) {
-            extra = 1;
-        } else {
-            extra = -1;
-        }
-    }
+//    if(draw_shadows) {
+//        if(isButtonDown) {
+//            extra = 1;
+//        } else {
+//            extra = -1;
+//        }
+//    }
     g.drawFittedText (button.getButtonText(),
                       leftIndent,
                       yIndent,

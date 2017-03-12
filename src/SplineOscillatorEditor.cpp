@@ -726,8 +726,8 @@ void SplineOscillatorEditor::paint(Graphics& g) {
             }
             int xText = point->x+3;
             int yText = point->y+3;
-            if(xText + 50 > point->maxX) {
-                xText -= 50;
+            if(xText + 60 > point->maxX) {
+                xText -= 60;
             }
             if(yText + 20 > point->maxY) {
                 yText -= 20;
