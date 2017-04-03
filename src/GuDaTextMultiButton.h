@@ -27,7 +27,7 @@ class GuDaTextButtonListener;
 class GuDaTextMultiButton : public Colorable
 {
 public:
-    GuDaTextMultiButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, function<void()> fn_in);
+    GuDaTextMultiButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, function<void()> onSwitchFn_in, function<void(const int, const bool)> onEnabledFn_in = 0);
     ~GuDaTextMultiButton() {}
     virtual void mouseMove (const MouseEvent& event);
     virtual void mouseEnter (const MouseEvent& event);
@@ -38,13 +38,16 @@ public:
     virtual void receiveEvent(EventType event, int optionalValue);
 
     const int getActiveNr();
-    function<void()> fn;
+    function<void()> onSwitchFn;
+    function<void(const int nr, const bool enabled)> onSetEnabledFn;
+    
     bool addNumberToButtons = false;
     bool roundBottomCorners = true;
 //    bool multipleActiveOK = false;
     void setTexts(const vector<string>& texts_in);
-    string getActiveString();
-    string getEnabledString();
+    const string getText(const int nr);
+    const string getActiveString();
+//    string getEnabledString();
     int fontSize = -1;
     bool showEnabled = false;
     void setButtonEnabled(const int nr, const bool enabled = true);

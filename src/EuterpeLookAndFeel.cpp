@@ -130,16 +130,8 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
                                     const float rotaryEndAngle,
                                     Slider& slider)
 {
-    if(draw_shadows) {
-        //to make room for shadows
-//        if(width >= 30) {
-//            width -= 2;
-//            height -= 2;
-//        } else {
-            width -= 1;
-            height -= 1;
-//        }
-    }
+    width -= 1;
+    height -= 1;
     
     bool biPolar = false;
     GuDaJuceKnob* k = dynamic_cast<GuDaJuceKnob*>(&slider);
@@ -157,38 +149,20 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     
     const float angle = rotaryStartAngle + sliderPos * (rotaryEndAngle - rotaryStartAngle);
     
-//    Colour bgColor((uint8)180, (uint8)210, (uint8)230, (uint8)128);
-    
     //full circle shadow
-    if(draw_shadows) {
-        float offset = 1. + (width/50.);
-        g.setColour(colors.color11);
-        g.fillEllipse(rx+offset, ry+offset, rw, rw);
-    }
+    float offset = 1. + (width/50.);
+    g.setColour(colors.color11);
+    g.fillEllipse(rx+offset, ry+offset, rw, rw);
     
     g.setColour(colors.color2);
     g.fillEllipse(rx, ry, rw, rw);
     
-//    if(thin_line_knobs && draw_shadows) {
-//        FillType fill (images.metalImage1, AffineTransform::rotation(angle, centreX, centreY));
-//        fill.setOpacity(0.05);
-//        g.setFillType(fill);
-//        g.fillEllipse(rx, ry, rw, rw);
-//    }
-    
-    //Colour arcColor((uint8)80, (uint8)90, (uint8)130, (uint8)128);
-//    Colour arcColor((uint8)230, (uint8)160, (uint8)100, (uint8)255);
-
-    float thickness = 0.0f;
-
-    if(thin_line_knobs) {
-        thickness = 0.9;
-        if(width < 40) {
-            //preventing the small knobs from having too thin lines
-            float w = 40 - width;
-            w /= 200.f;
-            thickness -= w;
-        }
+    float thickness = 0.9;
+    if(width < 40) {
+        //preventing the small knobs from having too thin lines
+        float w = 40 - width;
+        w /= 200.f;
+        thickness -= w;
     }
     
     g.setColour(colors.color3);
@@ -198,98 +172,21 @@ void EuterpeLookAndFeel::drawRotarySlider (Graphics& g,
     } else {
         filledArc.addPieSegment (rx, ry, rw, rw, rotaryStartAngle, angle, thickness);
     }
-//    if(draw_shadows) {
-//        g.setColour(colors.color11);
-//        Path shadowArc = filledArc;
-//        shadowArc.applyTransform (AffineTransform::translation(1.0f, 1.0f));
-//        g.fillPath (shadowArc);
-//    }
+    
     g.setColour(colors.color3);
     g.fillPath (filledArc);
-
-//    if(thin_line_knobs && draw_shadows) {
-//        float radius1[3] = {0.88f, 0.80f, 0.70f};
-//        float radius2[3] = {0.78f, 0.68f, 0.55f};
-//        uint8 shadow[3] = {20,15,10};
-//        for(int i = 0 ; i < 3 ; i++) {
-//            Path p;
-//            //p.startNewSubPath (2.f, height/2.f);
-//            
-//            p.addStar (Point<float>(centreX, centreY),
-//                       6,
-//                       radius*radius1[i],
-//                       radius*radius2[i],
-//                       angle);
-//            
-//            float offset = (width/40.);
-//            
-//            if(offset > 0.8) {
-//                offset = 0.8;
-//            }
-//            
-//            g.setColour(Colour((uint8)255,(uint8)255,(uint8)255,(uint8)shadow[i]));
-//            Path shadowArc = p;
-//            shadowArc.applyTransform (AffineTransform::translation(-offset, -offset));
-//            g.fillPath(shadowArc);
-//            
-//            g.setColour(Colour((uint8)0,(uint8)0,(uint8)0,(uint8)shadow[i]));
-//            shadowArc = p;
-//            shadowArc.applyTransform (AffineTransform::translation(offset, offset));
-//            g.fillPath(shadowArc);
-//            
-//            g.setColour(colors.color2);
-//            g.fillPath(p);
-//            
-//            
-//            FillType fill (images.metalImage3, AffineTransform::rotation(angle, centreX, centreY));
-//            fill.setOpacity(0.026);
-//            g.setFillType(fill);
-//            g.fillPath(p);
-//            //        g.setTiledImageFill(metalImage3, 0.f, 0.f, 0.1f);
-//        }
-//    }
     
     float midX = rx + (rw/2.f);
     float midY = ry + (rw/2.f);
     float egdeX = midX + (rw/2.f) * cos(angle - M_PI_2);
     float egdeY = midY + (rw/2.f) * sin(angle - M_PI_2);
     
-//    Colour lineColor((uint8)230, (uint8)240, (uint8)255, (uint8)255);
-    if(draw_shadows) {
-        g.setColour(colors.color11);
-        g.drawLine (midX+1, midY+1, egdeX+1, egdeY+1, 1.7f);
-//        g.drawLine (midX+2, midY+2, egdeX+2, egdeY+2, 1.0f);
-    }
+    //shadow on line
+    g.setColour(colors.color11);
+    g.drawLine (midX+1, midY+1, egdeX+1, egdeY+1, 1.7f);
+    
     g.setColour(colors.color1);
     g.drawLine (midX, midY, egdeX, egdeY, 1.7f);
-    
-    
-//    if(draw_shadows) {
-//        Path p;
-//        p.startNewSubPath (2.f, height/2.f);
-//        p.addArc(rx, ry, rw, rw, -3.14/2, 3.14/4.);
-//        p.addArc(rx+1., ry+1., rw+0.5, rw+0.5, 3.14/4., -3.14/2);
-//        const Colour c1((uint8)250, (uint8)250, (uint8)250, (uint8)48);
-//        g.setColour(c1);
-//        g.fillPath (p);
-//        
-//        Path pCopy(p);
-//        
-//        AffineTransform myTransform = AffineTransform::identity.rotated(3.14-(3.14/4), (width+1)/2, (height+1)/2);
-//        
-//        p.applyTransform (myTransform);
-//        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
-//        g.setColour(c2);
-//        g.fillPath (p);
-//        
-//        
-//        p=pCopy;
-//        myTransform = AffineTransform::identity.rotated(3.14, (width+1)/2, (height+1)/2);
-//        
-//        p.applyTransform (myTransform);
-//        g.setColour(c2);
-//        g.fillPath (p);
-//    }
     
 }
 
@@ -338,10 +235,10 @@ void EuterpeLookAndFeel::drawLinearSlider (Graphics& g,
     
 //    Colour fillColor((uint8)180, (uint8)200, (uint8)220, (uint8)255);
 
-    if(draw_shadows) {
+//    if(draw_shadows) {
         g.setColour(colors.color11);
         g.fillRoundedRectangle ((value*((width*0.8)))+3, 3., (width*0.2), 8., 4.);
-    }
+//    }
     if(colors.useStandardColourForSliderHandle) {
         g.setColour (colors.color1);
     } else {
@@ -349,14 +246,6 @@ void EuterpeLookAndFeel::drawLinearSlider (Graphics& g,
     }
     
     g.fillRoundedRectangle ((value*((width*0.8))), 0., (width*0.2), 8., 4.);
-
-
-    if(draw_shadows) {//structure on slider knob
-        FillType fill (images.metalImage3, AffineTransform::translation(width*value  ,0));
-        fill.setOpacity(0.04);
-        g.setFillType(fill);
-        g.fillRoundedRectangle ((value*((width*0.8))), 0., (width*0.2), 8., 4.);
-    }
 }
 
 //deprecated in latest juce

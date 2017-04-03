@@ -78,7 +78,6 @@ void GuDaTextButton::mouseDown(const MouseEvent& event) {
 }
 
 void GuDaTextButton::sendUpdateEvent() {
-//    listener->GuDaTextButtonCallback(this);
     updateCallback(this);
 }
 
@@ -102,15 +101,10 @@ void GuDaTextButton::paint (Graphics& g) {
     
     float round = 6.f;
     
-    if(draw_shadows) {
-//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
-//        g.setColour (c);
-//        g.fillRoundedRectangle((float)0, (float)0, (float)getWidth()-2, (float)getHeight()-2, round);
-
-        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
-        g.setColour (c2);
-        g.fillRoundedRectangle((float)2, (float)2, (float)getWidth()-2, (float)getHeight()-2, round);
-    }
+    //shadow
+    const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
+    g.setColour (c2);
+    g.fillRoundedRectangle((float)2, (float)2, (float)getWidth()-2, (float)getHeight()-2, round);
     
     float posX = 1.f;
     float posY = 1.f;

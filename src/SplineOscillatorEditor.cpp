@@ -781,6 +781,9 @@ static void AddSplinePoint(PointPopupMenuData* data, SplinePointType type) {
     DBUG(("added point %p", p));
 }
 
+//not _really_ threadsafe but I should never have several menus open in practice.
+static vector<string> g_fullPaths;
+
 static void pointPopupMenuCallback (const int result, SplineOscillatorEditor* editor)
 {
     bool relToBeat = false;
@@ -894,7 +897,7 @@ static void pointPopupMenuCallback (const int result, SplineOscillatorEditor* ed
                 mp->speed = osc4PointSpeedinBeatTo0to1(mp->speed);
             }
             
-        } else {
+        } else if (result >= 1000 && (result < 3000)) {
             switch(result) {
                 case 1000:
                     AddSplinePoint(&global_pointPopupMenuData, LINEAR);
@@ -914,8 +917,33 @@ static void pointPopupMenuCallback (const int result, SplineOscillatorEditor* ed
                 case 2002:
                     global_pointPopupMenuData.firstPoint->debugPoints();
                     break;
+                case 2003:
+                    if(editor->menuSaveShapeCallback) {
+                        editor->menuSaveShapeCallback();
+                    }
+                    break;
+                case 2004:
+                    if(editor->menuLoadShapeCallback) {
+                        editor->menuLoadShapeCallback();
+                    }
+                    break;
+                case 2005:
+                    splineEditorGridLocked = !splineEditorGridLocked;
+                    editor->menuGridLockCallback(splineEditorGridLocked);
                 default:
                     DBUG(("unknown %i", result));
+            }
+        } else if (result >= 3000 && (result < 4000)) {
+            DBUG(("quick open file chosed"));
+            const int index = result - 3000;
+            if(index < g_fullPaths.size()) {
+                if(editor->fileChosenCallback) {
+                    editor->fileChosenCallback(g_fullPaths[index]);
+                } else {
+                    DBUG(("WARNING: no editor->fileChosenCallback"));
+                }
+            } else {
+                DBUG(("bad index %i for fullpaths of size %i", index, g_fullPaths.size()));
             }
         }
         
@@ -926,18 +954,46 @@ static void pointPopupMenuCallback (const int result, SplineOscillatorEditor* ed
         }
     }
     DBUG(("global_pointPopupMenuData.pointNr %i", global_pointPopupMenuData.pointNr));
-    
 }
 
 void SplineOscillatorEditor::showNonPointPopupMenu() {
     DBGF;
     PopupMenu m;
     m.setLookAndFeel (&(this->getLookAndFeel()));
-    m.addItem (2000, "normalize",                 true, false);
-    m.addItem (2001, "randomize current points",  true, false);
+    if(showNormalize) {
+        m.addItem (2000, "normalize", true, false);
+    }
+    if(showRandomize) {
+        m.addItem (2001, "randomize current points", true, false);
+    }
 #ifdef DEBUG_BUILD
-    m.addItem (2002, "debug",                     true, false);
+    m.addItem (2002, "debug", true, false);
 #endif
+    if(menuSaveShapeCallback) {
+        m.addItem (2003, "save shape",  true, false);
+    }
+    if(menuLoadShapeCallback) {
+        m.addItem (2004, "load shape",  true, false);
+    }
+    
+    if(quickLoadCallback && fileChosenCallback) {
+        g_fullPaths = quickLoadCallback();
+
+        if(g_fullPaths.size() > 0) {
+            PopupMenu quickLoadMenu;
+            int nr = 0;
+            for(const string& path : g_fullPaths) {
+                String name = String(path).fromLastOccurrenceOf("/", false , false).upToLastOccurrenceOf(".enveloprshape", false, false);
+                quickLoadMenu.addItem (3000+nr, TRANS (name), true, false);
+                nr++;
+                DBUG(("path %s", path.c_str()));
+            }
+            m.addSubMenu (TRANS ("quick load"), quickLoadMenu);
+        }
+    }
+    
+    m.addItem(2005, "grid lock", true, splineEditorGridLocked);
+    
     m.showMenuAsync (PopupMenu::Options(),
                      ModalCallbackFunction::forComponent (pointPopupMenuCallback, (SplineOscillatorEditor*)this));    
 }
@@ -2329,8 +2385,25 @@ double SplineOscillatorPoint::leftMostPointWithModulation() {
     }
 }
 
+double SplineOscillatorPoint::getGridLockedX(double x_in) {
+    const double fraction = maxX/gridLockSizeX;
+    const int nrOfFractions = round(x_in/fraction);
+    return nrOfFractions*fraction;
+}
+
+double SplineOscillatorPoint::getGridLockedY(double y_in) {
+    const double fraction = maxY/gridLockSizeY;
+    const int nrOfFractions = round(y_in/fraction);
+    return nrOfFractions*fraction;
+}
+
 void SplineOscillatorPoint::setY(double y_in) {
     if(y_in >= 0 && y_in <= maxY) {
+
+        if(splineEditorGridLocked) {
+            y_in = getGridLockedY(y_in);
+        }
+
         if(type == START && endPoint) {
             y=y_in;
             if(endPoint == this) {
@@ -2358,7 +2431,9 @@ void SplineOscillatorPoint::setY(double y_in) {
 
 void SplineOscillatorPoint::setX(double x_in) {
     DBUG(("setX %f %f - pointNr %i", x_in, controlX, this->pointNr));
-    
+    if(splineEditorGridLocked) {
+        x_in = getGridLockedX(x_in);
+    }
     double leftX = x_in;
     double rightX = x_in;
     
@@ -2431,6 +2506,10 @@ void SplineOscillatorPoint::setX(double x_in) {
 
 void SplineOscillatorPoint::setControlX(double x_in) {
     DBUG(("x_in %f", x_in));
+    
+    if(splineEditorGridLocked) {
+        x_in = getGridLockedX(x_in);
+    }
     
     double leftX = x_in;
     double rightX = x_in;
@@ -2515,6 +2594,11 @@ void SplineOscillatorPoint::setControlY(double y_in) {
     if(y_in < 0 || y_in > maxY) {
         return;
     }
+    
+    if(splineEditorGridLocked) {
+        y_in = getGridLockedY(y_in);
+    }
+    
     controlY = y_in;
     
     if(controlY < 0) {
@@ -2525,6 +2609,10 @@ void SplineOscillatorPoint::setControlY(double y_in) {
 
 void SplineOscillatorPoint::setControlX2(double x_in) {
     DBUG(("x_in %f", x_in));
+    
+    if(splineEditorGridLocked) {
+        x_in = getGridLockedX(x_in);
+    }
     
     double leftX = x_in;
     double rightX = x_in;
@@ -2565,6 +2653,11 @@ void SplineOscillatorPoint::setControlY2(double y_in) {
     if(y_in < 0 || y_in > maxY) {
         return;
     }
+    
+    if(splineEditorGridLocked) {
+        y_in = getGridLockedY(y_in);
+    }
+    
     controlY2 = y_in;
     if(controlY2 < 0) {
         DBUG(("WARNING, controlY below 0"));

@@ -63,6 +63,10 @@ PropertiesFile::Options PropertyProxy::getPropertyOptions(string name) {
     return propertyOptions;
 }
 
+const string PropertyProxy::getParentFolder() {
+    return getFile().getParentDirectory().getFullPathName().toRawUTF8();
+}
+
 const File& PropertyProxy::getFile() {
     return properties->getFile();
 }

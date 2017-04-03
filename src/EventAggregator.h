@@ -27,7 +27,9 @@ enum EventType {
     EVENT_CHANGE_DRUM_TYPE                  = 1019,
     EVENT_OPEN_SEQUENCER_PAGE               = 1020, //optionalValue 1 is open, 0 is close
     EVENT_NAG_NEWER_VERSION                 = 1021, // version should set in g_latestVersion
-    EVENT_RESIZE_GUI                        = 1022 //optional value is new size in percent
+    EVENT_RESIZE_GUI                        = 1022, //optional value is new size in percent
+    EVENT_ONLINE_PASSWORD_VERDICT           = 1023, //optional value 1 is OK, 0 is fail
+    EVENT_DEBUG_THING                       = 1024  //Sent from menu in debug builds when choosing debug thing
 };
 
 class EventAggregator;

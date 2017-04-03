@@ -17,7 +17,7 @@
 class PropertyProxy: public ChangeBroadcaster, ChangeListener
 {
 public:
-    PropertyProxy(string name_in = "DrumR");
+    PropertyProxy(string name_in = "EnvelopR");
     ~PropertyProxy();
     
     virtual void changeListenerCallback (ChangeBroadcaster* source);
@@ -31,6 +31,7 @@ public:
     bool saveIfNeeded();
     bool save();
     const File& getFile();
+    const string getParentFolder();
 private:
     string name;
     PropertiesFile* properties = nullptr;

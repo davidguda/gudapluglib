@@ -16,8 +16,8 @@
 #include "EventAggregator.h"
 #include "debug.h"
 
-GuDaTextMultiButton::GuDaTextMultiButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, function<void()> fn_in)
-: Colorable(compName, eventAggregator_in), fn(fn_in), mouseOver(false)
+GuDaTextMultiButton::GuDaTextMultiButton(const String& compName, shared_ptr<Font> font, shared_ptr<EventAggregator> eventAggregator_in, function<void()> onSwitchFn_in, function<void(const int, const bool)> onEnabledFn_in)
+: Colorable(compName, eventAggregator_in), onSwitchFn(onSwitchFn_in), onSetEnabledFn(onEnabledFn_in), mouseOver(false)
 {
     mouseButtonDown = false;
     
@@ -61,6 +61,8 @@ void GuDaTextMultiButton::mouseDown(const MouseEvent& event) {
     mouseButtonDown = true;
     mouseOver = true;
     mouseOverNr = -1;
+    
+    bool onSetEnabled = false;
 
     const int buttonPressedNr = (event.x*nrOfChoices)/getWidth();
     DBUG(("buttonPressedNr %i", buttonPressedNr));
@@ -72,14 +74,17 @@ void GuDaTextMultiButton::mouseDown(const MouseEvent& event) {
         if(xInButton < getHeight()) {
             DBUG(("on/off!"));
             setButtonEnabled(buttonPressedNr, !buttonEnabled[buttonPressedNr]);
+            onSetEnabled = true;
+            onSetEnabledFn(buttonPressedNr, buttonEnabled[buttonPressedNr]);
         } else {
             setActive(buttonPressedNr);
         }
     } else {
         setActive(buttonPressedNr);
     }
-    if(fn) {
-        fn();
+    
+    if(onSwitchFn && onSetEnabled == false) {
+        onSwitchFn();
     }
 }
 
@@ -93,7 +98,6 @@ void GuDaTextMultiButton::calculateMouseOver(const MouseEvent& event) {
     if(showEnabled) {
         const int xInButton = event.x - (((float)mouseOverNr/nrOfChoices)*getWidth());
         
-        DBUG(("xInButton %i", xInButton));
         if(xInButton < getHeight()) {
             mouseOverNr = -1;
             return;
@@ -105,8 +109,9 @@ const int GuDaTextMultiButton::getActiveNr() {
     return activeNr;
 }
 
-string GuDaTextMultiButton::getActiveString() {
-    return to_string(activeNr);
+const string GuDaTextMultiButton::getActiveString() {
+//    return to_string(activeNr);
+    return texts[activeNr];
 }
 
 void GuDaTextMultiButton::setActive(const int nr) {
@@ -120,6 +125,14 @@ void GuDaTextMultiButton::setButtonEnabled(const int nr, const bool enabled) {
 void GuDaTextMultiButton::setTexts(const vector<string>& texts_in) {
     texts = texts_in;
     nrOfChoices = texts.size();
+}
+
+const string GuDaTextMultiButton::getText(const int nr) {
+    if(nr <= texts.size()) {
+        return texts[nr];
+    }
+    DBUG(("WARNING: bad textg index %i", nr));
+    return "";
 }
 
 void GuDaTextMultiButton::paint (Graphics& g) {

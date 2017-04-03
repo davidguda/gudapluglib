@@ -48,6 +48,10 @@ private:
     JUCE_LEAK_DETECTOR (ModulationPoint)
 };
 
+static bool splineEditorGridLocked = false;
+static const int gridLockSizeX = 32;
+static const int gridLockSizeY = 16;
+
 class SplineOscillatorPoint
 {
 public:
@@ -91,7 +95,7 @@ public:
     void setControlY(double u_in);
     void setControlX2(double x_in);
     void setControlY2(double u_in);
-    
+   
     bool overPoint;
     bool overControlPoint;
     bool overControlPoint2;
@@ -161,10 +165,13 @@ public:
     const SplineOscillatorEditor* getSplineOscillatorEditor() const {return splineOscillatorEditor;}
     void deleteAllNextPoints();
 private:
+    double getGridLockedX(double x_in);
+    double getGridLockedY(double y_in);
+    
     ~SplineOscillatorPoint(); //private since it does delete this, private destructor ensures it not created on the stack.
     double getLocalHighestPoint();
     double getLocalLowestPoint();
-    void getHorizontalModulationLimits(int subPOint, double* leftLimit, double* rightLimit);
+    void getHorizontalModulationLimits(int subPoint, double* leftLimit, double* rightLimit);
     double leftMostPointWithModulation();
     double rightMostPointWithModulation();
     SplineOscillatorEditor* splineOscillatorEditor;
@@ -186,7 +193,7 @@ private:
     SplineOscillatorPoint* firstPoint;
 };
 
-class GuDaDrumRAudioProcessor;
+//class GuDaDrumRAudioProcessor;
 class SplineOscillatorEditor : public Component/*, public PointInfoTimerListener*/, public SliderListener
 {
 public:
@@ -227,6 +234,15 @@ public:
     function<string(const float y)> pointToLabelCallback;//y is 0..1
     void sanityCheckAndFixPoints();
     void makeDefaultPointsIfNoFirstPoint();
+    
+    function<void()> menuSaveShapeCallback;
+    function<void()> menuLoadShapeCallback;
+    function<vector<string>()> quickLoadCallback;//function should return a list of paths to shapes
+    function<void(string path)> fileChosenCallback;
+    function<void(const bool)> menuGridLockCallback;
+    
+    bool showNormalize = false;
+    bool showRandomize = false;
 protected:
 
     virtual void paint (Graphics& g);

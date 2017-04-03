@@ -127,7 +127,7 @@ void ParameterShower::paint(Graphics& g) {
         if(waitBeforeFade > 0) {
             --waitBeforeFade; 
         } else if(!visibleUntilNext) {
-            bgAlpha *= 0.90;
+            bgAlpha *= 0.85;
         }
         
         Colour fillColor((uint8)0, (uint8)0, (uint8)0, intBgAlpha);

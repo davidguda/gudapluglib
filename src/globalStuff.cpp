@@ -121,9 +121,6 @@ string g_extraThumpDir;
 
 int INSTANCES_RUNNING=0;
 
-bool draw_shadows=true;
-bool thin_line_knobs=true;
-
 //Stulet rakt av helt skamlöst från aeffect.h
 enum VstStringConstants
 {

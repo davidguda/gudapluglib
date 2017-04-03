@@ -25,7 +25,7 @@ public:
     void setText(const float f);
 
     void setLongTimeText(String str_in);
-        
+            
     void setMouseForwardComponent(Component* mouseForwardComponent_in);
 
     virtual void mouseDown (const MouseEvent& event) override;

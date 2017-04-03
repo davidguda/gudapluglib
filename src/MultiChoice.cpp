@@ -260,16 +260,12 @@ void MultiChoice::paint (Graphics& g) {
                       1, 1, width-2, height-2,
                       Justification::centred, 1);
     
-    if(draw_shadows) {
-//        const Colour c((uint8)255, (uint8)255, (uint8)255, (uint8)48);
-//        g.setColour (c);
-//        g.drawLine(0.f, 0.f, getWidth(), 0.f);
-//        g.drawLine(0.f, 0.f, 0.f, (float)getHeight());
-        const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
-        g.setColour (c2);
-        g.drawLine(1.f, (float)getHeight(), (float)getWidth(), (float)getHeight());
-        g.drawLine((float)getWidth(), 1.f, (float)getWidth(), (float)getHeight());
-    }
+
+    //shadow
+    const Colour c2((uint8)0, (uint8)0, (uint8)0, (uint8)48);
+    g.setColour (c2);
+    g.drawLine(1.f, (float)getHeight(), (float)getWidth(), (float)getHeight());
+    g.drawLine((float)getWidth(), 1.f, (float)getWidth(), (float)getHeight());
     
 }
 

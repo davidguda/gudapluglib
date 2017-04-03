@@ -47,6 +47,9 @@ using namespace std;
 #include <limits>
 #include <random>
 
+#include <cctype>
+#include <algorithm>
+
 //#include "UserPresentError.h"
 
 #ifdef WINDOWS
@@ -71,9 +74,6 @@ extern double g_bpm;
 extern double g_ppqPosition;
 extern bool g_isPlaying;
 extern int g_maxExpectedBlockSize;
-
-extern bool draw_shadows;
-extern bool thin_line_knobs;
 
 const double twopi = 2.0 * M_PI;
 const float twopi_f = 2.f*M_PI;
@@ -522,6 +522,13 @@ template<class F> extern string decimalToFraction(F f) {
         fractionTxt += tmp;
     }
     return fractionTxt;
+}
+
+inline std::string trim(const std::string &s)
+{
+    auto wsfront=std::find_if_not(s.begin(),s.end(),[](int c){return std::isspace(c);});
+    auto wsback=std::find_if_not(s.rbegin(),s.rend(),[](int c){return std::isspace(c);}).base();
+    return (wsback<=wsfront ? std::string() : std::string(wsfront,wsback));
 }
 
 
