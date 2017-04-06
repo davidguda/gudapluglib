@@ -64,11 +64,9 @@ void ExtendedTimer::triggerTimeouts() {
         
         int64_t now = Time::currentTimeMillis();
         int i = 0;
-        for(auto && cb : callbacks) {
-            if(cb.time < now) {
-                //DBUG(("%lld < %lld", cb.time , now));
-//                cb.cb();
-                callNowCallbacks.push_back(cb);
+        for(auto && callback : callbacks) {
+            if(callback.time < now) {
+                callNowCallbacks.push_back(callback);
                 callbacks.erase(callbacks.begin() + i);
                 triggerTimeouts();
                 break;
@@ -87,5 +85,17 @@ void ExtendedTimer::triggerTimeouts() {
 void ExtendedTimer::clearTimerCallback() {
     const ScopedLock arl(addRemoveLock);
     callbacks.clear();
+}
+
+void ExtendedTimer::removeTimeoutWithID(const int idToRemove) {
+    const ScopedLock sl (ETlock);
+    int i = 0;
+    for(auto && callback : callbacks) {
+        if(callback.id == idToRemove) {
+            callbacks.erase(callbacks.begin() + i);
+            return;
+        }
+    }
+    DBUG(("no matching callback to remove"));
 }
 

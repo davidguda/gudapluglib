@@ -38,6 +38,7 @@ public:
         triggerTimeouts();
     }
     virtual void clearTimerCallback();
+    virtual void removeTimeoutWithID(const int idToRemove);
 protected:
     juce::CriticalSection ETlock;
 private:
