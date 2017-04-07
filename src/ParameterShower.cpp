@@ -40,6 +40,8 @@ void ParameterShower::receiveEvent(EventType event, int optionalValue) {
     if(event == EVENT_NAG_REGISTER) {
         if(g_isDemoMode) {
             waitingText = "boop, demo!";
+        } else {
+            DBUG(("WARNING: this shuold not be sent in the first place if not in demo mode"));
         }
     }
     if(event == EVENT_NAG_NEWER_VERSION) {
