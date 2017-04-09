@@ -229,15 +229,15 @@ public:
     bool envelopeMode = true;
     bool modulationAllowed = false;
     function<void(double* splineDataParams)> updateCallback;
-    function<string()> cornerInfoCallback;
+    function<const string()> cornerInfoCallback;
     bool drawLabelsOnPoints = false;
-    function<string(const float y)> pointToLabelCallback;//y is 0..1
+    function<const string(const float y)> pointToLabelCallback;//y is 0..1
     void sanityCheckAndFixPoints();
     void makeDefaultPointsIfNoFirstPoint();
     
     function<void()> menuSaveShapeCallback;
     function<void()> menuLoadShapeCallback;
-    function<vector<string>()> quickLoadCallback;//function should return a list of paths to shapes
+    function<const vector<string>()> quickLoadCallback;//function should return a list of paths to shapes
     function<void(string path)> fileChosenCallback;
     function<void(const bool)> menuGridLockCallback;
     
