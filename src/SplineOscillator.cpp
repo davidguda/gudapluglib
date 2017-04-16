@@ -14,6 +14,8 @@
 
 //static const int kWaveSize = 4096;
 
+static const int quadraticStepperQuality = 15;//15
+static const int cubicStepperQuality = 12;//12
 
 static int splineNR = 0;
 
@@ -848,7 +850,7 @@ void SplineOscillator::makeQuadratic(float* sound, int length, const Osc4Data& f
     int frame = -1;
     float samplesInSpline = length + 1.;
     float stepLength = 1. / samplesInSpline;
-    float stepper = stepLength / 15.;        //15 for now, higher for more quality but slower run etc.
+    float stepper = stepLength / quadraticStepperQuality;        //15 for now, higher for more quality but slower run etc.
     float accumulator = 0.000001;            //more than zero to avoid rounding errors
     
     for(float t = 1. ; t >= 0. ; t -= stepper) {
@@ -913,7 +915,7 @@ void SplineOscillator::makeCubic(float* sound, int length, const Osc4Data& fromP
     int frame = -1;
     float samplesInSpline = length + 1.;
     float stepLength = 1. / samplesInSpline;
-    float stepper = stepLength / 12.;        //12 for now, higher for more quality but slower run etc.
+    float stepper = stepLength / cubicStepperQuality;        //12 for now, higher for more quality but slower run etc.
     float accumulator = 0.000001f;            //more than zero to avoid rounding errors
     
     for(float t = 1. ; t >= 0. ; t -= stepper) {
