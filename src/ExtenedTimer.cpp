@@ -53,6 +53,10 @@ void ExtendedTimer::setTimeout(function<void()> cb, const int64_t timeMs, const 
     callbacks.push_back(c);
 }
 
+void ExtendedTimer::runAsync(function<void()>&& cb) {
+    setTimeout(cb, 0);
+}
+
 void ExtendedTimer::triggerTimeouts() {
     if(callbacks.empty()) {
         return;

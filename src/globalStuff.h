@@ -543,7 +543,7 @@ extern bool inline debugTestFloat(const F& f) {return true;} //empty dummy for t
 
 #ifdef DEBUG_BUILD
 template<class F>
-extern void inline debugCheckAllFrames(F& f, int numSamples) {
+extern void inline debugCheckAllFrames(F* f, int numSamples) {
     int frame = -1;
     while(++frame < numSamples) {
         debugTestFloat(f[frame]);
@@ -551,7 +551,7 @@ extern void inline debugCheckAllFrames(F& f, int numSamples) {
 }
 #else
 template<class F>
-extern void inline debugCheckAllFrames(F& f, int numSamples) {}
+extern void inline debugCheckAllFrames(F* f, int numSamples) {}
 #endif
 
 

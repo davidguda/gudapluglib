@@ -713,9 +713,31 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         point = point->getNext();
     }
     
+    firstPoint->ensureNextAndPreviousPoints();
     point = firstPoint;
     Path myPath;
+
+    SplineOscillatorPoint* markedPoints[2] = {nullptr, nullptr};
+    
     while(point) {
+        if(point->overAnyPoint()) {
+            if(point->overPoint) {
+                if(point->isFirstPoint() || point->isLastPoint()) {
+                    markedPoints[0] = point->getFirstPoint()->nextPoint;
+                    if(point->getLastPoint() != point->getFirstPoint()->nextPoint) {
+                        markedPoints[1] = point->getLastPoint();
+                    }
+                } else {
+                    markedPoints[0] = point;
+                    markedPoints[1] = point->nextPoint;
+                    if(!markedPoints[1]->previousPoint) {
+                        markedPoints[1]->previousPoint = markedPoints[0];
+                    }
+                }
+            } else {
+                markedPoints[0] = point;
+            }
+        }
         point->addToPathAndDrawControlLines(g, myPath, getColors()->color3);
         if(drawLabelsOnPoints) {
             string txt = " ";
@@ -740,7 +762,21 @@ void SplineOscillatorEditor::paint(Graphics& g) {
 
     g.setColour (getColors()->color1);
     g.strokePath (myPath, PathStrokeType(2.f));
-    
+    for(SplineOscillatorPoint* markedPoint : markedPoints) {
+        if(markedPoint) {
+            Path markedPath;
+            if(markedPoint->previousPoint) {
+                markedPath.startNewSubPath(markedPoint->previousPoint->x, markedPoint->previousPoint->y);
+                markedPoint->addToPathAndDrawControlLines(g, markedPath, getColors()->color3);
+                g.setColour (getColors()->color3);
+                g.strokePath (markedPath, PathStrokeType(5.f));
+                g.setColour (getColors()->color1);
+                g.strokePath (markedPath, PathStrokeType(3.f));
+            } else {
+                DBUG(("WARNING: no previous point!"));
+            }
+        }
+    }
     
     if(cornerInfoCallback) {
         auto lastPoint = firstPoint->getLastPoint();
@@ -1308,6 +1344,20 @@ void SplineOscillatorPoint::deleteAllNextPoints() {
     DBUG(("end"));
 }
 
+void SplineOscillatorPoint::ensureNextAndPreviousPoints() {
+    if(getNext()) {
+        if(getNext()->previousPoint != this) {
+            DBUG(("WARNING: %p != %p", getNext()->previousPoint, this));
+            getNext()->previousPoint = this;
+        }
+        getNext()->ensureNextAndPreviousPoints();
+    }
+    if(!getNext() && !isLastPoint() && previousPoint) {
+        DBUG(("WARNING: not last point has no next"));
+        previousPoint->ensureNextAndPreviousPoints();
+    }
+}
+
 bool SplineOscillatorPoint::anyModulation() {
     if(type == LINEAR || type == QUADRATIC || type == CUBIC) {
         if(modulationPoint[0].status != NO_MODULATION) {
@@ -1596,7 +1646,7 @@ SplineOscillatorPoint* SplineOscillatorPoint::getLastPoint() {
         return this;
     }
     if(getNextNotOff()) {
-        getNextNotOff()->getLastPoint();
+        return getNextNotOff()->getLastPoint();
     }
     DBUG(("could not find more points not off, returning this."));
     return this;
@@ -1988,6 +2038,7 @@ void SplineOscillatorPoint::setPoints(double x_in, double y_in, double controlX_
 
 void SplineOscillatorPoint::setNextPoint(SplineOscillatorPoint* nextPoint_in) {
     nextPoint = nextPoint_in;
+    nextPoint->previousPoint = this;
 }
 
 void SplineOscillatorPoint::setEndPoint(SplineOscillatorPoint* endPoint_in) {
@@ -2004,6 +2055,10 @@ bool SplineOscillatorPoint::isLastPoint() {
         DBUG(("moving endPoint to nextPoint, pointNr %i", pointNr));
         endPoint = nextPoint;
         startPoint->setEndPoint(nextPoint);
+    }
+    else if(!endPoint && !nextPoint) {
+        DBUG(("WARNING: re-setting endpoint"));
+        getFirstPoint()->findAndSetEndPoint();
     }
     return this == endPoint;
 }
@@ -2086,24 +2141,24 @@ void SplineOscillatorPoint::addToPathAndDrawControlLines(Graphics& g, Path& p, C
     if(type == CUBIC && previousPoint) {
         //DBUG(("quadratic point, %f, %f, %f, %f, %f, %f", previousPoint->x, previousPoint->y, x, y, controlX, controlY));
         if(isLastPoint() && !splineOscillatorEditor->envelopeMode) {
-            //p.quadraticTo (controlX, controlY, x, startPoint->y);
             p.cubicTo (controlX, controlY, controlX2, controlY2, x, startPoint->y);
         } else {
-            //p.quadraticTo (controlX, controlY, x, y);
             p.cubicTo (controlX, controlY, controlX2, controlY2, x, y);
         }
         g.setColour (c2);
-        Path controlPath;
-        controlPath.startNewSubPath(previousPoint->x, previousPoint->y);
+        Path controlPath1;
+        Path controlPath2;
+        controlPath1.startNewSubPath(previousPoint->x, previousPoint->y);
         
-        controlPath.lineTo(controlX, controlY);
-        controlPath.lineTo(controlX2, controlY2);
+        controlPath1.lineTo(controlX, controlY);
+        controlPath2.startNewSubPath(controlX2, controlY2);
         if(isLastPoint() && !splineOscillatorEditor->envelopeMode) {
-            controlPath.lineTo(x, startPoint->y);
+            controlPath2.lineTo(x, startPoint->y);
         } else {
-            controlPath.lineTo(x, y);
+            controlPath2.lineTo(x, y);
         }
-        g.strokePath (controlPath, PathStrokeType(0.5f));
+        g.strokePath (controlPath1, PathStrokeType(0.5f));
+        g.strokePath (controlPath2, PathStrokeType(0.5f));
         
         if(overControlPoint) {
             g.setColour (overColor);

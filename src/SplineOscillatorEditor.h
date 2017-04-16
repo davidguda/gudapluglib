@@ -164,6 +164,7 @@ public:
     
     const SplineOscillatorEditor* getSplineOscillatorEditor() const {return splineOscillatorEditor;}
     void deleteAllNextPoints();
+    void ensureNextAndPreviousPoints();
 private:
     double getGridLockedX(double x_in);
     double getGridLockedY(double y_in);

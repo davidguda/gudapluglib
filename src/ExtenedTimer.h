@@ -31,7 +31,8 @@ class ExtendedTimer : public Timer
 {
 public:
     ExtendedTimer() : runningCallbacks(0) {}
-    virtual void setTimeout(function<void()> cb, const int64_t timeMs, const int id = 0);
+    virtual void setTimeout(function<void()> cb, const int64_t timeMs = 0, const int id = 0);
+    virtual void runAsync(function<void()>&& cb);
     virtual void triggerTimeouts();
     virtual ~ExtendedTimer();
     virtual void timerCallback() { //need to call this if overloaded

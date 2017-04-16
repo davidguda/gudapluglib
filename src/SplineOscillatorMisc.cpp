@@ -109,7 +109,7 @@ void sparseSaveToDoubleArrayFromXmlElement(const XmlElement& element, double* da
     {
         int dataNr = stoi(child->getTagName().fromLastOccurrenceOf("_", false, false).toStdString());
         const double value = child->getDoubleAttribute("value", 0.);
-        DBUG(("dataNr %i = %f", dataNr, value));
+//        DBUG(("dataNr %i = %f", dataNr, value));
         if(dataNr >= 0 && dataNr < maxNrOfElements) {
             if(debugTestFloat(value)) {
                 dataParams[dataNr] = value;

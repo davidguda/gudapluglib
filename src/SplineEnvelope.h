@@ -99,13 +99,13 @@ private:
 
     SplineOscillator splineOscillator;
     SharedSplineData sharedSplineData;
-    Osc4Data osc4Data[MAX_OSC4_POINTS];
+    Osc4Data osc4Data[MAX_OSC4_POINTS] = {};
     AudioSampleBuffer buffer;
     
     SplineOscillator threadSplineOscillator;
     AudioSampleBuffer threadBuffer;
     int sampleFramesForThread = 0;
-    Osc4Data threadOsc4Data[MAX_OSC4_POINTS];
+    Osc4Data threadOsc4Data[MAX_OSC4_POINTS] = {};
     bool threadBufferOKToCopy = false;
     bool needToUpdateFromThreadBuffer = false;
     bool needReRunThread = false;
