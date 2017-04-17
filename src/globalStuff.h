@@ -554,7 +554,11 @@ template<class F>
 extern void inline debugCheckAllFrames(F* f, int numSamples) {}
 #endif
 
-
+//linear interpolate between two values, t [0..1]
+template<class T>
+inline T interpolate(const T& p1, const T& p2, const float t) {
+    return (p1*(1.f-t)) + (p2*t);
+}
 
 #endif
 

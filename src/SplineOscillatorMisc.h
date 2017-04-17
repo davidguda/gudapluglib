@@ -171,11 +171,32 @@ struct Osc4Data {
     }
 };
 
-struct SimplePoint {
-    SimplePoint() {x = y = 0;}
-    float x;
-    float y;
+class SimplePoint {
+public:
+    SimplePoint() {};
+    SimplePoint(const float x_in, const float y_in)
+      : x(x_in), y(y_in) {};
+    SimplePoint(const SimplePoint& other) {
+        x=other.x;
+        y=other.y;
+    };
+    
+    const string str() {
+        return to_string(x) + string(" ") + to_string(y);
+    }
+    
+    float x = 0.f;
+    float y = 0.f;
+
 };
+
+inline const SimplePoint operator*(const SimplePoint& point, float multiplier) {
+    return SimplePoint(point.x*multiplier, point.y*multiplier);
+}
+
+inline const SimplePoint operator+(const SimplePoint& a, const SimplePoint& b) {
+    return SimplePoint(a.x+b.x, a.y+b.y);
+}
 
 extern void updateOsc4DataFromParams(Osc4Data* osc4Data, const double* pointParams, SharedSplineData sharedSplineData);//osc4Data is an array of size MAX_OSC4_POINTS
 

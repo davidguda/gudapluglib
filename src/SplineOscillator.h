@@ -101,8 +101,8 @@ private:
     
     void sanityCheckModulatedPoints();
     
-    void makeCubic(float* sound, int length, const Osc4Data& fromPoint, const Osc4Data& toPoint);
-    void makeQuadratic(float* sound, int length, const Osc4Data& fromPoint, const Osc4Data& toPoint);
+    void makeCubic(float* sound, const int length, const Osc4Data& fromPoint, const Osc4Data& toPoint);
+    void makeQuadratic(float* sound, const int length, const Osc4Data& fromPoint, const Osc4Data& toPoint);
     void makeLinear(float* sound, int length, const Osc4Data& fromPoint, const Osc4Data& toPoint);
 
     inline void modulateSubPoint(Osc4Data* point, Osc4Data* modPoint, int samples, int subPoint, int currentFrame);

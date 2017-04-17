@@ -14,8 +14,7 @@
 
 //static const int kWaveSize = 4096;
 
-static const int quadraticStepperQuality = 15;//15
-static const int cubicStepperQuality = 12;//12
+static const int splineQuality = 5;//I python script 3 seemed to be enough to never get any underruns.
 
 static int splineNR = 0;
 
@@ -823,167 +822,84 @@ void SplineOscillator::makeLinear(float* sound, int length, const Osc4Data& from
     }
 }
 
-void SplineOscillator::makeQuadratic(float* sound, int length, const Osc4Data& fromPoint, const Osc4Data& toPoint) {
-    if(length < 1) {
-//        DBUG(("WARNING, bad length %i", length));
-        length = 1;
-    }
-    float pLength        = toPoint.x[0] - fromPoint.x[0];
-    float controlLength  = toPoint.x[1] - fromPoint.x[0];
-    float controlX       = controlLength / pLength;
-
-    SimplePoint startPoints[3];
-    startPoints[0].x = 0;
-    startPoints[0].y = fromPoint.y[0];
-    startPoints[1].x = controlX;
-    startPoints[1].y = toPoint.y[1];
-    startPoints[2].x = 1.;
-    startPoints[2].y = toPoint.y[0];
+void SplineOscillator::makeQuadratic(float* sound, const int length, const Osc4Data& fromPoint, const Osc4Data& toPoint) {
+    const int quality = splineQuality;
     
-    SimplePoint points[2];
-    SimplePoint finished;
-    finished.x = 0;
-    finished.y = 0;
+    const float pLength        = toPoint.x[0] - fromPoint.x[0];
+    const float controlLength  = toPoint.x[1] - fromPoint.x[0];
+    const float controlX       = controlLength / pLength;
     
-    float oldX=0.;
+    const SimplePoint points[3] = {
+        {0, fromPoint.y[0]},
+        {controlX*length, toPoint.y[1]},
+        {static_cast<float>(length), toPoint.y[0]}
+    };
     
-    int frame = -1;
-    float samplesInSpline = length + 1.;
-    float stepLength = 1. / samplesInSpline;
-    float stepper = stepLength / quadraticStepperQuality;        //15 for now, higher for more quality but slower run etc.
-    float accumulator = 0.000001;            //more than zero to avoid rounding errors
+    int goalX = 0;
+    const int steps = length*quality;
     
-    for(float t = 1. ; t >= 0. ; t -= stepper) {
-        float oneMinusT = 1. - t;
-        points[0].x = oneMinusT*controlX;
-        points[1].x = (t*controlX) + oneMinusT;
+    for(int step = 0 ; step < steps+1 ; step++) {
+        const float t = (float)step/(float)steps;
+        const SimplePoint p_a_1 = interpolate(points[0], points[1], t);
+        const SimplePoint p_a_2 = interpolate(points[1], points[2], t);
         
-        finished.x = (t*points[0].x) + oneMinusT*points[1].x;
-        float xProgress = finished.x - oldX;
-        
-        if(xProgress > stepLength) {
-            points[0].y = (t*startPoints[0].y) + oneMinusT*startPoints[1].y;
-            points[1].y = (t*startPoints[1].y) + oneMinusT*startPoints[2].y;
-            finished.y = (t*points[0].y) + oneMinusT*points[1].y;
-
-            sound[++frame] = finished.y;
-            oldX += xProgress;
-            accumulator += xProgress - stepLength;
-            if(accumulator >= stepLength) {
-                accumulator -= stepLength;
-                sound[++frame] = finished.y;
+        const SimplePoint candidatePoint = interpolate(p_a_1, p_a_2, t);
+        if(candidatePoint.x >= goalX) {
+            const int addX = 1 + (int(candidatePoint.x) - goalX);
+            for(int x = 0 ; x < addX; x++) {
+                if(goalX+x < length) {
+                    sound[goalX+x] = candidatePoint.y;
+                } else {
+                    break;
+                }
             }
-        }
-    }
-    if((frame+1) < length) {
-        //DBUG(("frame shortage %i %i", (frame+1), length));
-        sound[++frame] = finished.y;
-    }
-}
-
-void SplineOscillator::makeCubic(float* sound, int length, const Osc4Data& fromPoint, const Osc4Data& toPoint) {
-    if(length < 1) {
-        //        DBUG(("WARNING, bad length %i", length));
-        length = 1;
-    }
-    float pLength        = toPoint.x[0] - fromPoint.x[0];
-    float controlLength  = toPoint.x[1] - fromPoint.x[0];
-    float controlLength2 = toPoint.x[2] - toPoint.x[1];
-    float controlX       = controlLength / pLength;
-    float controlX2      = controlLength2 / pLength;
-    
-    //DBUG(("controlLength %f controlLength2 %f", controlLength, controlLength2));
-    
-    SimplePoint startPoints[4];
-    startPoints[0].x = 0;
-    startPoints[0].y = fromPoint.y[0];
-    startPoints[1].x = controlX;
-    startPoints[1].y = toPoint.y[1];
-    startPoints[2].x = controlX2;
-    startPoints[2].y = toPoint.y[2];
-    startPoints[3].x = 1.;
-    startPoints[3].y = toPoint.y[0];
-    
-    SimplePoint points[3];
-    SimplePoint points2[2];
-    SimplePoint finished;
-    finished.x = 0;
-    finished.y = 0;
-
-    float oldX=0.;
-    
-    int frame = -1;
-    float samplesInSpline = length + 1.;
-    float stepLength = 1. / samplesInSpline;
-    float stepper = stepLength / cubicStepperQuality;        //12 for now, higher for more quality but slower run etc.
-    float accumulator = 0.000001f;            //more than zero to avoid rounding errors
-    
-    for(float t = 1. ; t >= 0. ; t -= stepper) {
-        float oneMinusT = 1. - t;
-        
-        points[0].x = /*(t*startPoints[0].x) +*/ oneMinusT*startPoints[1].x;
-        points[1].x = (t*startPoints[1].x) + oneMinusT*startPoints[2].x;
-        points[2].x = (t*startPoints[2].x) + oneMinusT /**startPoints[3].x*/;
-        points2[0].x = (t*points[0].x) + oneMinusT*points[1].x;
-        points2[1].x = (t*points[1].x) + oneMinusT*points[2].x;
-        finished.x = (t*points2[0].x) + oneMinusT*points2[1].x;
-        
-        float xProgress = finished.x - oldX;
-        
-        if(xProgress > stepLength) {
-            points[0].y = (t*startPoints[0].y) + oneMinusT*startPoints[1].y;
-            points[1].y = (t*startPoints[1].y) + oneMinusT*startPoints[2].y;
-            points[2].y = (t*startPoints[2].y) + oneMinusT*startPoints[3].y;
-            points2[0].y = (t*points[0].y) + oneMinusT*points[1].y;
-            points2[1].y = (t*points[1].y) + oneMinusT*points[2].y;
-            finished.y = (t*points2[0].y) + oneMinusT*points2[1].y;
-
-            sound[++frame] = finished.y;
-            oldX += xProgress;
-            accumulator += xProgress - stepLength;
-            if(accumulator >= stepLength) {
-                accumulator -= stepLength;
-                sound[++frame] = finished.y;
-            }
-        }
-    }
-    if((frame+1) < length) {
-        //DBUG(("frame shortage %i %i", (frame+1), length));
-        sound[++frame] = finished.y;
+            goalX += addX;
+        } //else bad candidatePoint
     }
 }
 
 
-
-//for(FLOAT t = 1. ; t >= 0. ; t -= stepper) {
-//    FLOAT oneMinusT = 1. - t;
-//    
-//    points[0].x = /*(t*startPoints[0].x) +*/ oneMinusT*startPoints[1].x;
-//    points[1].x = (t*startPoints[1].x) + oneMinusT*startPoints[2].x;
-//    points[2].x = (t*startPoints[2].x) + oneMinusT /**startPoints[3].x*/;
-//    points2[0].x = (t*points[0].x) + oneMinusT*points[1].x;
-//    points2[1].x = (t*points[1].x) + oneMinusT*points[2].x;
-//    finished.x = (t*points2[0].x) + oneMinusT*points2[1].x;
-//    
-//    FLOAT xProgress = finished.x - oldX;
-//    
-//    if(xProgress > stepLength) {
-//        points[0].y = /*(t*startPoints[0].y) + */oneMinusT*startPoints[1].y;
-//        points[1].y = (t*startPoints[1].y) + oneMinusT*startPoints[2].y;
-//        points[2].y = (t*startPoints[2].y) + oneMinusT/**startPoints[3].y*/;
-//        points2[0].y = (t*points[0].y) + oneMinusT*points[1].y;
-//        points2[1].y = (t*points[1].y) + oneMinusT*points[2].y;
-//        finished.y = (t*points2[0].y) + oneMinusT*points2[1].y;
-//        
-//        sound[++frame] = finished.y;
-//        oldX += xProgress;
-//        accumulator += xProgress - stepLength;
-//        if(accumulator >= stepLength) {
-//            accumulator -= stepLength;
-//            sound[++frame] = finished.y;
-//        }
-//    }
-//}
-
+void SplineOscillator::makeCubic(float* sound, const int length, const Osc4Data& fromPoint, const Osc4Data& toPoint) {
+    const int quality = splineQuality;
+    
+    const float pLength        = toPoint.x[0] - fromPoint.x[0];
+    const float controlLength  = toPoint.x[1] - fromPoint.x[0];
+    const float controlLength2 = toPoint.x[2] - toPoint.x[1];
+    const float controlX       = controlLength / pLength;
+    const float controlX2      = controlX + (controlLength2 / pLength);
+    
+    const SimplePoint points[4] = {
+        {0, fromPoint.y[0]},
+        {controlX*length, toPoint.y[1]},
+        {controlX2*length,toPoint.y[2]},
+        {static_cast<float>(length), toPoint.y[0]}
+    };
+    
+    int goalX = 0;
+    const int steps = length*quality;
+    
+    for(int step = 0 ; step < steps+1 ; step++) {
+        const float t = (float)step/(float)steps;
+        const SimplePoint p_a_1 = interpolate(points[0], points[1], t);
+        const SimplePoint p_a_2 = interpolate(points[1], points[2], t);
+        const SimplePoint p_a_3 = interpolate(points[2], points[3], t);
+        
+        const SimplePoint p_b_1 = interpolate(p_a_1, p_a_2, t);
+        const SimplePoint p_b_2 = interpolate(p_a_2, p_a_3, t);
+        
+        const SimplePoint candidatePoint = interpolate(p_b_1, p_b_2, t);
+        if(candidatePoint.x >= goalX) {
+            const int addX = 1 + (int(candidatePoint.x) - goalX);
+            for(int x = 0 ; x < addX; x++) {
+                if(goalX+x < length) {
+                    sound[goalX+x] = candidatePoint.y;
+                } else {
+                    break;
+                }
+            }
+            goalX += addX;
+        } //else bad candidatePoint
+    }
+}
 
 
