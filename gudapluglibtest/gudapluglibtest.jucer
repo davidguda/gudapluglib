@@ -9,6 +9,30 @@
             file="Source/MainComponent.cpp"/>
       <FILE id="PTlFn6" name="Main.cpp" compile="1" resource="0" file="Source/Main.cpp"/>
     </GROUP>
+    <FILE id="BCnb0w" name="ComponentRepaintTimer.cpp" compile="1" resource="0"
+          file="../src/ComponentRepaintTimer.cpp"/>
+    <FILE id="Sj7yte" name="ComponentRepaintTimer.h" compile="0" resource="0"
+          file="../src/ComponentRepaintTimer.h"/>
+    <FILE id="Xn6zz2" name="ExtenedTimer.cpp" compile="1" resource="0"
+          file="../src/ExtenedTimer.cpp"/>
+    <FILE id="zywtsP" name="ExtenedTimer.h" compile="0" resource="0" file="../src/ExtenedTimer.h"/>
+    <FILE id="zMZnUR" name="MultiChoice.cpp" compile="1" resource="0" file="../src/MultiChoice.cpp"/>
+    <FILE id="CYWgsb" name="MultiChoice.h" compile="0" resource="0" file="../src/MultiChoice.h"/>
+    <FILE id="vBQJE7" name="ParameterShower.cpp" compile="1" resource="0"
+          file="../src/ParameterShower.cpp"/>
+    <FILE id="yYrxgo" name="ParameterShower.h" compile="0" resource="0"
+          file="../src/ParameterShower.h"/>
+    <FILE id="x8Xc8L" name="PropertyProxy.cpp" compile="1" resource="0"
+          file="../src/PropertyProxy.cpp"/>
+    <FILE id="TMTrh9" name="PropertyProxy.h" compile="0" resource="0" file="../src/PropertyProxy.h"/>
+    <FILE id="sX8KLr" name="SmallWaveShower.cpp" compile="1" resource="0"
+          file="../src/SmallWaveShower.cpp"/>
+    <FILE id="EzE6KH" name="SmallWaveShower.h" compile="0" resource="0"
+          file="../src/SmallWaveShower.h"/>
+    <FILE id="BSHSsq" name="SplineEnvelope.cpp" compile="1" resource="0"
+          file="../src/SplineEnvelope.cpp"/>
+    <FILE id="XGVc7H" name="SplineEnvelope.h" compile="0" resource="0"
+          file="../src/SplineEnvelope.h"/>
     <FILE id="rkIViY" name="Colorable.cpp" compile="1" resource="0" file="../src/Colorable.cpp"/>
     <FILE id="A6ex7q" name="Colorable.h" compile="0" resource="0" file="../src/Colorable.h"/>
     <FILE id="WDvJzT" name="ColorSet.cpp" compile="1" resource="0" file="../src/ColorSet.cpp"/>
