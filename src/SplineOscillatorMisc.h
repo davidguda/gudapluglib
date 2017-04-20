@@ -187,7 +187,6 @@ public:
     
     float x = 0.f;
     float y = 0.f;
-
 };
 
 inline const SimplePoint operator*(const SimplePoint& point, float multiplier) {

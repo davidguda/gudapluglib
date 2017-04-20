@@ -9,7 +9,7 @@
 */
 
 #include "SmallWaveShower.h"
-#include "PluginProcessor.h"
+#include "globalstuff.h"
 
 SmallWaveShower::SmallWaveShower(String name, shared_ptr<EventAggregator> eventAggregator_in, CriticalSection& sharedLock_in, const bool oneSamplePerPixel_in, const bool soundIs0To1_in)
 : Colorable(name, eventAggregator_in), sharedLock(sharedLock_in), oneSamplePerPixel(oneSamplePerPixel_in), soundIs0To1(soundIs0To1_in) {

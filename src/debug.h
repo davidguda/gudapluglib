@@ -62,19 +62,18 @@ private:
     int line = 0;
 };
 
-//Right now only one can be used!
 class TIMEDDBGCLASS {
 public:
     TIMEDDBGCLASS() : func (gFUNC__), file(gFILE__), line(gLINE__) {
         text = "";
         DBG2("start");
-        everyThousandStart(0, text.c_str());
+        everyThousandStart(id, text.c_str());
     };
     
-    TIMEDDBGCLASS(string text_in) : func (gFUNC__), file(gFILE__), line(gLINE__) {
+    TIMEDDBGCLASS(string text_in, const int id_in) : func (gFUNC__), file(gFILE__), line(gLINE__), id(id_in) {
         text = text_in;
         DBG2(string(string("start") + text).c_str());
-        everyThousandStart(0, text.c_str());
+        everyThousandStart(id, text.c_str());
     };
     
     ~TIMEDDBGCLASS() {
@@ -82,13 +81,14 @@ public:
         gFILE__ = file;
         gLINE__ = line;
         DBG2(string(string("end") + text).c_str());
-        everyThousandEnd(0);
+        everyThousandEnd(id);
     }
 private:
     string text;
     const char* func;
     const char* file;
     int line = 0;
+    int id = 0;
 };
 
 #ifdef DEBUG_BUILD

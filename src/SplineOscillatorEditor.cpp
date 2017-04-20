@@ -256,6 +256,8 @@ void SplineOscillatorEditor::mouseDown(const MouseEvent& event) {
     if(pointHit) {
         //DBUG(("pointHit %i", pointHit->pointNr));
         firstPoint->resetSelectedAllPoints();
+        firstPoint->resetModulationPointsBeingDragged();
+
         if(pointHit->overPoint) {
             pointHit->selected[0] = true;
         } else if (pointHit->overControlPoint) {
@@ -305,84 +307,9 @@ void SplineOscillatorEditor::mouseDoubleClick (const MouseEvent& event) {
         point = point->getNext();
     }
     
-    if(hit) {
-        if(subPointHit == 0) {
-            DBUG(("hit main point"));
-            if(point->isLastPoint()) {
-                DBUG(("not possible on last point!"));
-                return;
-            }
-            
-            if(point->type == LINEAR) {
-                DBUG(("sub 0 LINEAR"));
-                point->deletePoint(subPointHit);
-            } else if(point->type == QUADRATIC) {
-                DBUG(("sub 0 QUADRATIC"));
-                point->type = LINEAR;
-                point->x = point->controlX;
-                point->y = point->controlY;
-            } else if(point->type == CUBIC) {
-                DBUG(("sub 0 CUBIC"));
-                point->type = QUADRATIC;
-                point->x = point->controlX2;
-                point->y = point->controlY2;
-            }
-        } else {
-            DBUG(("updade point from subPoint to main point"));
-            
-            if(point->type == QUADRATIC) {
-                DBUG(("first subpoint in QUADRATIC"));
-                double x, y;
-                point->getSubPointCoordinate(subPointHit, x, y);
-                point->deletePoint(subPointHit);
-                point->type = LINEAR;
-                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point->previousPoint, LINEAR);
-                newPoint->x = x;
-                newPoint->y = y;
-                
-                //TODO insert Linear point at where subpoint was
-            } else if(point->type == CUBIC) {
-                if(subPointHit == 1) {
-                    DBUG(("first subpoint in CUBIC"));
-                    double x, y;
-                    point->getSubPointCoordinate(subPointHit, x, y);
-                    point->deletePoint(subPointHit);
-                    
-                    SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point->previousPoint, LINEAR);
-                    newPoint->x = x;
-                    newPoint->y = y;
-                } else if(subPointHit == 2) {
-                    if(point->isLastPoint()) {
-                        //TODO: handle special case
-                        //I should probably make a new LINEAR last point
-                        DBUG(("TODO not possible on last point!"));
-                        return;
-                    }
-                    DBUG(("second subpoint in CUBIC"));
-                    point->debugThisCoordinates();
-                    
-                    double x, y;
-                    point->getSubPointCoordinate(0, x, y);
-                    double subX, subY;
-                    point->getSubPointCoordinate(2, subX, subY);
-                    DBUG(("x %f, y%f, subX %f, subY %f", x, y, subX, subY));
-                    
-                    if(point->isLastPoint()) {
-                        DBUG(("last point, need to take extra care.."));
-                    }
-                    
-                    point->deletePoint(2);
-                    point->x = subX;
-                    point->y = subY;
-                    
-                    SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point, LINEAR);
-                    newPoint->setX(x);
-                    newPoint->setY(y);
-                }
-                //TODO insert Linear point at where subpoint was
-            }
-            
-        }
+    if(hit && point) {
+        point->deletePoint(subPointHit);
+        return;//Important to return here since a point may potentially delete itself from memory.
         repaint();
     } else {
         makeNewPointAt(event);
@@ -458,35 +385,25 @@ void SplineOscillatorEditor::makeNewPointAt(const MouseEvent& event) {
             point->debugThisCoordinates();
             break;
         case CUBIC:
-            if(point->isLastPoint()) {
-                DBUG(("not possible on last point yet!"));
-                DBUG(("TODO:!"));
-                DBUG(("xyz"));
-//                return;
-            }
+        {
             if(event.x > point->controlX2) {
-                double x = point->x;
-                double y = point->y;
-                point->x = event.x;
-                point->y = event.y;
-                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point, LINEAR);
-                newPoint->x = x;
-                newPoint->y = y;
+                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point->previousPoint, CUBIC);
+                newPoint->x = event.x;
+                newPoint->y = event.y;
+                newPoint->controlX = point->controlX;
+                newPoint->controlY = point->controlY;
+                newPoint->controlX2 = point->controlX2;
+                newPoint->controlY2 = point->controlY2;
+                point->type = LINEAR;
             } else if(event.x > point->controlX) {
-                double x = point->x;
-                double y = point->y;
-                double cx = point->controlX2;
-                double cy = point->controlY2;
-                
-                point->x = event.x;
-                point->y = event.y;
+                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point->previousPoint, QUADRATIC);
+                newPoint->x = event.x;
+                newPoint->y = event.y;
+                newPoint->controlX = point->controlX;
+                newPoint->controlY = point->controlY;
+                point->controlX = point->controlX2;
+                point->controlY = point->controlY2;
                 point->type = QUADRATIC;
-                
-                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point, QUADRATIC);
-                newPoint->x = x;
-                newPoint->y = y;
-                newPoint->controlX = cx;
-                newPoint->controlY = cy;
             } else if(event.x < point->controlX) {
                 SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(point->previousPoint, LINEAR);
                 newPoint->x = event.x;
@@ -495,6 +412,7 @@ void SplineOscillatorEditor::makeNewPointAt(const MouseEvent& event) {
                 DBUG(("can't handle this yet"));
                 newPointAdded = false;
             }
+        }
             break;
         default:
             DBUG(("dont know how to handle this. type %i", point->type));
@@ -1328,6 +1246,7 @@ SplineOscillatorPoint::~SplineOscillatorPoint() {
 }
 
 void SplineOscillatorPoint::suicide() {
+    //TODO: should perhaps register at editor to let it delete at a later safe point instead of directly delete this
     DBGF;
     delete this;
 }
@@ -1673,9 +1592,6 @@ void SplineOscillatorPoint::deletePoint(int subPoint) {
             if(previousPoint && getNext()) {
                 previousPoint->setNextPoint(getNext());
                 getNext()->previousPoint = previousPoint;
-                splineOscillatorEditor->repaint();
-                startPoint->updateParamsValues();
-                startPoint->setPointNr(0);
                 modulationPoint[0].status = NO_MODULATION;
                 markedForDeletion = true;
             } else {
@@ -1687,22 +1603,42 @@ void SplineOscillatorPoint::deletePoint(int subPoint) {
             modulationPoint[2].status = NO_MODULATION;
         }
     } else if(type == QUADRATIC) {
-        if(subPoint == 0) {
-            type = LINEAR;
-            x = controlX;
-            y = controlY;
-        } else if(subPoint == 1) {
-            type = LINEAR;
-            splineOscillatorEditor->repaint();
-            startPoint->updateParamsValues();
+        if(previousPoint && getNext() && getNext()->type == QUADRATIC && subPoint == 0) {
+            getNext()->controlX2 = getNext()->controlX;
+            getNext()->controlY2 = getNext()->controlY;
+            getNext()->controlX = controlX;
+            getNext()->controlY = controlY;
+            getNext()->type = CUBIC;
+            previousPoint->setNextPoint(getNext());
+            getNext()->previousPoint = previousPoint;
+            markedForDeletion = true;
+        } else {
+            if(subPoint == 0) {
+                type = LINEAR;
+                x = controlX;
+                y = controlY;
+            } else if(subPoint == 1) {
+                type = LINEAR;
+            }
         }
         modulationPoint[1].status = NO_MODULATION;
         modulationPoint[2].status = NO_MODULATION;
     } else if(type == CUBIC) {
         if(subPoint == 0) {
-            type = QUADRATIC;
-            x = controlX2;
-            y = controlY2;
+            if(previousPoint && getNext() && getNext()->type == LINEAR) {
+                getNext()->controlX = controlX;
+                getNext()->controlY = controlY;
+                getNext()->controlX2 = controlX2;
+                getNext()->controlY2 = controlY2;
+                getNext()->type = CUBIC;
+                previousPoint->setNextPoint(getNext());
+                getNext()->previousPoint = previousPoint;
+                markedForDeletion = true;
+            } else {
+                type = QUADRATIC;
+                x = controlX2;
+                y = controlY2;
+            }
         } else if(subPoint == 1) {
             type = QUADRATIC;
             controlX = controlX2;
@@ -1716,12 +1652,16 @@ void SplineOscillatorPoint::deletePoint(int subPoint) {
     } else {
         DBUG(("WARNING, unknown case, don't know how to handle subpoint %i on point %i", subPoint, pointNr));
     }
+
     getFirstPoint()->sanityCheckAndFixPoints();
+    startPoint->updateParamsValues();
+    startPoint->setPointNr(0);
     splineOscillatorEditor->repaint();
     splineOscillatorEditor->updateVoiceWithParams();
+    
     if(markedForDeletion) {
-        DBUG(("commiting suicide by delete this %p", this));
-        delete this;
+        DBUG(("commiting suicide %p", this));
+        suicide();
     }
 }
 

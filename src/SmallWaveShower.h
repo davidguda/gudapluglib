@@ -13,7 +13,6 @@
 
 #include "../JuceLibraryCode/JuceHeader.h"
 #include "Colorable.h"
-#include "PluginProcessor.h"
 
 // Based SmallWaveShower from DrumR
 class SmallWaveShower : public Colorable

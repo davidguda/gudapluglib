@@ -445,7 +445,6 @@ void SplineOscillator::calculateBlockVariableSplineSize(int sampleFrames, float*
         //tmpSound[frame] += volume * envelopeSound[posInEnvelope++];
     }
     fPosInEnvelope = posInEnvelope;
-    
 }
 
 
@@ -857,7 +856,6 @@ void SplineOscillator::makeQuadratic(float* sound, const int length, const Osc4D
         } //else bad candidatePoint
     }
 }
-
 
 void SplineOscillator::makeCubic(float* sound, const int length, const Osc4Data& fromPoint, const Osc4Data& toPoint) {
     const int quality = splineQuality;
