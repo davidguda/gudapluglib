@@ -33,8 +33,8 @@ struct PointPopupMenuData {
 
 static PointPopupMenuData global_pointPopupMenuData;
 
-SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in)
- : Component(name), /*pointInfoTimer(this),*/ colors(colors_in), splineDataParams(splineDataParams_in)
+SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in, ComponentRepaintTimer& repaintTimer_in)
+ : Component(name), /*pointInfoTimer(this),*/ repaintTimer(repaintTimer_in), colors(colors_in),  splineDataParams(splineDataParams_in)
 {
     menuKnob = 0;
     eventAggregator = eventAggregator_in;
@@ -309,8 +309,8 @@ void SplineOscillatorEditor::mouseDoubleClick (const MouseEvent& event) {
     
     if(hit && point) {
         point->deletePoint(subPointHit);
-        return;//Important to return here since a point may potentially delete itself from memory.
         repaint();
+        return;//Important to return here since a point may potentially delete itself from memory.
     } else {
         makeNewPointAt(event);
     }
@@ -584,6 +584,27 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         g.fillRect(0, 0, getWidth(), getHeight());
     }
    
+    if(draggedOver) {
+        if(dragBlink) {
+            Colour bgColour((uint8)255, (uint8)255, (uint8)255, (uint8)(8));
+            g.setColour(bgColour);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        } else {
+            Colour bgColour((uint8)0, (uint8)0, (uint8)0, (uint8)(8));
+            g.setColour(bgColour);
+            g.fillRect(0, 0, getWidth(), getHeight());
+        }
+        g.setColour(getColors()->color3);
+        g.drawRect(2, 2, getWidth()-2, getHeight()-2, 4);
+        
+        DBUG(("blnk %i", dragBlink));
+
+        if(Time::getCurrentTime().toMilliseconds() > lastBlink.toMilliseconds() + 350) {
+            lastBlink = Time::getCurrentTime();
+            dragBlink = !dragBlink;
+        }
+    }
+    
     SplineOscillatorPoint* point = firstPoint;
     while(point) {
         for(int subPoint = 0 ; subPoint < 3 ; subPoint++) {
@@ -884,6 +905,7 @@ static void pointPopupMenuCallback (const int result, SplineOscillatorEditor* ed
                 case 2005:
                     splineEditorGridLocked = !splineEditorGridLocked;
                     editor->menuGridLockCallback(splineEditorGridLocked);
+                    break;
                 default:
                     DBUG(("unknown %i", result));
             }

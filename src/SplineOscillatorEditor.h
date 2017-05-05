@@ -15,7 +15,9 @@
 #include "SplineOscillatorMisc.h"
 #include "Colorable.h"
 #include "globalStuff.h"
+#include "ComponentRepaintTimer.h"
 //#include "PointInfoTimer.h"
+#include "InitShapes.h"
 
 using namespace std;
 
@@ -195,10 +197,10 @@ private:
 };
 
 //class GuDaDrumRAudioProcessor;
-class SplineOscillatorEditor : public Component/*, public PointInfoTimerListener*/, public SliderListener
+class SplineOscillatorEditor : public Component/*, public PointInfoTimerListener*/, public SliderListener, public DragAndDropTarget
 {
 public:
-    SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in);
+    SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in, ComponentRepaintTimer& repaintTimer_in);
     ~SplineOscillatorEditor();
     
     void init();
@@ -206,15 +208,60 @@ public:
     void setSplineDataParams(double* params_in) {splineDataParams = params_in;}
     void setMenuKnob(Slider* knob_in) {menuKnob = knob_in;}
     
-    virtual void mouseMove (const MouseEvent& event);
-    virtual void mouseEnter (const MouseEvent& event);
-    virtual void mouseExit (const MouseEvent& event);
-    virtual void mouseDown (const MouseEvent& event);
-    virtual void mouseUp (const MouseEvent& event);
-    virtual void mouseDrag (const MouseEvent& event);
-    virtual void mouseDoubleClick (const MouseEvent& event);
+    virtual void mouseMove (const MouseEvent& event) override;
+    virtual void mouseEnter (const MouseEvent& event) override;
+    virtual void mouseExit (const MouseEvent& event) override;
+    virtual void mouseDown (const MouseEvent& event) override;
+    virtual void mouseUp (const MouseEvent& event) override;
+    virtual void mouseDrag (const MouseEvent& event) override;
+    virtual void mouseDoubleClick (const MouseEvent& event) override;
     
-    virtual void sliderValueChanged (Slider* slider);
+    virtual bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override {
+        String name = dragSourceDetails.sourceComponent->getName();
+        const bool interest = name.contains(fileEnding) || hasInitShape(name.toStdString());
+        DBUG(("%s - interest %i", name.toRawUTF8(), interest));
+        return interest;
+    }
+    
+    virtual void itemDragEnter (const SourceDetails& dragSourceDetails) override {
+        DBUG(("%s", dragSourceDetails.sourceComponent->getName().toRawUTF8()));
+        draggedOver = true;
+        repaintTimer.addComponent(this);
+    }
+    
+    virtual void itemDragExit (const SourceDetails& dragSourceDetails) override {
+        DBUG(("%s", dragSourceDetails.sourceComponent->getName().toRawUTF8()));
+        draggedOver = false;
+        repaintTimer.removeComponent(this);
+        eventAggregator->sendEvent(EVENT_NEED_REDRAW, 1);
+    }
+    
+    virtual void itemDropped (const SourceDetails& dragSourceDetails) override {
+        DBUG(("%s", dragSourceDetails.sourceComponent->getName().toRawUTF8()));
+        string path = dragSourceDetails.sourceComponent->getName().toStdString();
+        
+        bool pathOK = false;
+        if(hasInitShape(path)) {
+            pathOK = true;
+        } else {
+            File f(path);
+            if(f.existsAsFile() && fileChosenCallback) {
+                pathOK = true;
+            } else {
+                DBUG(("WARNING: bad path %s or fileChosenCallback is not set", path.c_str()));
+            }
+        }
+        
+        if(pathOK) {
+            fileChosenCallback(path);
+        }
+        
+        draggedOver = false;
+        repaintTimer.removeComponent(this);
+        eventAggregator->sendEvent(EVENT_NEED_REDRAW, 1);
+    }
+    
+    virtual void sliderValueChanged (Slider* slider) override;
     
     void makeNewPointAt(const MouseEvent& event);
     
@@ -246,8 +293,14 @@ public:
     bool showRandomize = false;
 protected:
 
-    virtual void paint (Graphics& g);
+    virtual void paint (Graphics& g) override;
 private:
+    ComponentRepaintTimer& repaintTimer; //not normally used but can be temporarily registered during dragging etc.
+    const String fileEnding = ".enveloprshape"; //If used for more project this must be settable from constructor
+    bool draggedOver = false;
+    bool dragBlink = false;
+    Time lastBlink = Time::getCurrentTime();
+    
     UpdateParamsFromPointsTimer updateParamsTimer;
     Slider* menuKnob = nullptr;
     

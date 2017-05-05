@@ -43,7 +43,7 @@ public:
     {
         if (bufferToFill.buffer->getNumChannels() > 0)
         {
-            const float* channelData = bufferToFill.buffer->getWritePointer (0, bufferToFill.startSample);
+            const float* channelData = bufferToFill.buffer->getReadPointer (0, bufferToFill.startSample);
 
             for (int i = 0; i < bufferToFill.numSamples; ++i)
                 pushNextSampleIntoFifo (channelData[i]);
