@@ -252,13 +252,14 @@ public:
             }
         }
         
-        if(pathOK) {
-            fileChosenCallback(path);
-        }
         
         draggedOver = false;
         repaintTimer.removeComponent(this);
         eventAggregator->sendEvent(EVENT_NEED_REDRAW, 1);
+
+        if(pathOK) {
+            fileChosenCallback(path); //This might delete this editor so don't call anything after
+        }
     }
     
     virtual void sliderValueChanged (Slider* slider) override;

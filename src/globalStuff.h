@@ -9,6 +9,9 @@
 
 //#include "AUInstrumentBase.h"
 
+
+#include "../JuceLibraryCode/JuceHeader.h"
+
 #include <string>
 using namespace std;
 
@@ -553,6 +556,9 @@ extern void inline debugCheckAllFrames(F* f, int numSamples) {
 template<class F>
 extern void inline debugCheckAllFrames(F* f, int numSamples) {}
 #endif
+
+//this will loop through all samples so use with caution
+extern void checkAndFixAudioSampleBuffer(AudioSampleBuffer& buffer);
 
 //linear interpolate between two values, t [0..1]
 template<class T>

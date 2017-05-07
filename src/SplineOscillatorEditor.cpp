@@ -54,6 +54,7 @@ SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eve
 
 SplineOscillatorEditor::~SplineOscillatorEditor() {
     DBGRAII;
+    repaintTimer.removeComponent(this);
     if(firstPoint) {
         DBUG(("got firstPiont, call deleteAllNext"));
         firstPoint->deleteAllNextPoints();

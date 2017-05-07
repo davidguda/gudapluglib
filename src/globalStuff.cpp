@@ -20,7 +20,7 @@ double g_ppqPosition = 0.;
 bool g_isPlaying = false;
 int g_maxExpectedBlockSize = 4096; //This is from prepareToPlay in pluginPorcessor and won't be exact. More like rough guideline
 
-bool g_isDemoMode = true;
+bool g_isDemoMode = false;
 string g_latestVersion = "";//default to empty, set fro networkThreads.
 bool g_debugThing = false;
 
@@ -210,6 +210,18 @@ bool debugTestFloat(const double& f) {
     return true;
 }
 #endif
+
+void checkAndFixAudioSampleBuffer(AudioSampleBuffer& buffer) {
+    for(int channel = 0 ; channel < buffer.getNumChannels(); channel++) {
+        float* sound = buffer.getWritePointer(channel);
+        for(int i = 0 ; i < buffer.getNumSamples(); i++) {
+            if(isnan(sound[i])) {
+                sound[i] = 0.f;
+                DBUG(("sound[%i] is nan", i));
+            }
+        }
+    }
+}
 
 extern bool sanityCheckParams(double* params) {
 	bool sane = true;
