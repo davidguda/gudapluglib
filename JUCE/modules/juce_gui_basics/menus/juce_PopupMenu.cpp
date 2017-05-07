@@ -195,7 +195,7 @@ public:
                 const bool alignToRectangle,
                 const bool shouldDismissOnMouseUp,
                 ApplicationCommandManager** const manager)
-       : Component ("menu"),
+       : Component ("Menu"),
          parent (parentWindow),
          options (opts),
          managerOfChosenCommand (manager),
