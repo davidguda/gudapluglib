@@ -35,14 +35,6 @@ public:
     virtual void receiveEvent(EventType event, int optionalValue) override;
     
     virtual void timerCallback() override;
-
-    static const string float2String(const float f) {
-        char txt[8];
-        memset(txt, 0, 8);
-        sprintf(txt, "%.3f", f);
-
-        return txt;
-    }
     
 protected:
     virtual void paint (Graphics& g) override;

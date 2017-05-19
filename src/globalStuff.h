@@ -566,6 +566,14 @@ inline T interpolate(const T& p1, const T& p2, const float t) {
     return (p1*(1.f-t)) + (p2*t);
 }
 
+inline const string float2String(const float f) {
+    char txt[8];
+    memset(txt, 0, 8);
+    sprintf(txt, "%.3f", f);
+    
+    return txt;
+}
+
 #endif
 
 

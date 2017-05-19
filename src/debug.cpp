@@ -246,10 +246,7 @@ start:
         
         va_list ap;
         va_start(ap, str);
-        char tmp[2048];
-        for(int i = 0 ; i < 2048; ++i) {
-            tmp[i]=0;
-        }
+        char tmp[2048] = {};
         
         if(global_debug_print_time) {
             //print time

@@ -48,11 +48,11 @@ public:
     const string getText(const int nr);
     const string getActiveString();
 //    string getEnabledString();
-    int fontSize = -1;
     bool showEnabled = false;
     void setButtonEnabled(const int nr, const bool enabled = true);
     const bool isButtonEnabled(const int nr) const {return buttonEnabled[nr];}
 protected:
+    int fontSize = -1;
     static const int maxNrOfButtons = 16;
 
     int nrOfChoices = 3;

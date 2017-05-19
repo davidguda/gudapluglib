@@ -449,6 +449,10 @@ void SplineOscillator::calculateBlockVariableSplineSize(int sampleFrames, float*
 
 
 void SplineOscillator::calculateFullEnvelope(int sampleFrames, float* tmpSound) {
+    if(sampleFrames < 1) {
+        DBUG(("too short envelope to make %s", sampleFrames));
+        return;
+    }
 //    calculateBlockFixedSplineSize(sampleFrames, tmpSound, sampleFrames/kWaveSize, 1.f);
     int samplesMade = makeNewEnvelopeOfSize(sampleFrames, 0, tmpSound);
     for(int i = 0 ; i < sampleFrames ; i++) {
@@ -539,6 +543,9 @@ int SplineOscillator::makeNewEnvelopeOfSize(int samples, int currentFrame, float
             samples += 1;
             restSamples -= 1.;
         }
+    }
+    if(samples < 1) {
+        DBUG(("WARNING: samples %i", samples));
     }
     
     if(okPointer(sharedSplineData)) {

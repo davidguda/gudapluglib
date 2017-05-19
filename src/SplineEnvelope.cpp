@@ -95,8 +95,8 @@ void SplineEnvelope::run() {
     do {
         DBUG(("start round"));
         needReRunThread = false;
-        if(sampleFramesForThread == 0) {
-            DBUG(("WARNING: sampleFramesForThread == 0"));
+        if(sampleFramesForThread <= 0) {
+            DBUG(("WARNING: sampleFramesForThread <= 0"));
             return;
         }
         threadBufferOKToCopy = false;
