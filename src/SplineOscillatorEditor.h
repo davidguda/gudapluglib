@@ -196,6 +196,8 @@ private:
     SplineOscillatorPoint* firstPoint;
 };
 
+class SquareMarking;
+
 //class GuDaDrumRAudioProcessor;
 class SplineOscillatorEditor : public Component/*, public PointInfoTimerListener*/, public SliderListener, public DragAndDropTarget
 {
@@ -324,6 +326,8 @@ private:
     
     bool noPaint;
     bool initRun = false;
+    
+    shared_ptr<SquareMarking> squareMarking; //reset when no marking, set when marking is active
     JUCE_LEAK_DETECTOR (SplineOscillatorEditor)
 };
 

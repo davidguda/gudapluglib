@@ -8,7 +8,11 @@
   ==============================================================================
 */
 
+
 #include "SplineOscillatorEditor.h"
+
+#include <set>
+
 #include "StandardColors.h"
 //#include "parameterEnum.h"
 #include "EventAggregator.h"
@@ -20,6 +24,334 @@
 
 #include "windowshacks.h"
 //#include "PluginProcessor.h"
+
+const bool isWithinRect(const int x_in, const int y_in, const Rectangle<int>& rect) {
+    if(x_in < rect.getX()) return false;
+    if(y_in < rect.getY()) return false;
+    if(x_in > rect.getRight()) return false;
+    if(y_in > rect.getBottom()) return false;
+    return true;
+}
+
+const bool rectWithinRect(const Rectangle<int>& outerRect, const Rectangle<int>& innerRect) {
+    if(innerRect.getX() < outerRect.getX()) return false;
+    if(innerRect.getRight() > outerRect.getRight()) return false;
+    if(innerRect.getY() < outerRect.getY()) return false;
+    if(innerRect.getBottom() > outerRect.getBottom()) return false;
+    return true;
+}
+
+template<class F, class R> void scaleXY(F& x, F& y, const Rectangle<R>& oldRect, const Rectangle<R>& newRect) {
+    const F fromLeft = x - oldRect.getX();
+    const F xFactor = fromLeft / oldRect.getWidth();
+    x = newRect.getX() + (xFactor * newRect.getWidth());
+    const F fromTop = y - oldRect.getY();
+    const F yFactor = fromTop / oldRect.getHeight();
+    y = newRect.getY() + (yFactor * newRect.getHeight());
+    
+//    while(y > newRect.getBottom()) {
+//        DBUG(("y--"));
+//        y--;
+//    }
+//    while(y < newRect.getY()) {
+//        DBUG(("y++"));
+//        y++;
+//    }
+//    while(x > newRect.getRight()) {
+//        DBUG(("x--"));
+//        x--;
+//    }
+//    while(x < newRect.getX()) {
+//        DBUG(("x++"));
+//        x++;
+//    }
+    DBUG(("x %f y %f", x, y));
+    DBUG(("newRect %i %i %i %i", newRect.getX(), newRect.getY(), newRect.getWidth(), newRect.getHeight()));
+}
+
+CriticalSection squareMarkingLock;
+class SquareMarking : public Rectangle<int>
+{
+public:
+    static const int handleSize = 15;
+    SquareMarking(const int x_in, const int y_in) {
+        setX(x_in);
+        setY(y_in);
+        setWidth(0);
+        setHeight(0);
+    }
+    
+    void updateMarking(const int x_in, const int y_in) {
+        if(x_in > getX()) {
+            setRight(x_in);
+        } else {
+            setLeft(x_in);
+        }
+        
+        if(y_in > getY()) {
+            setBottom(y_in);
+        } else {
+            setTop(y_in);
+        }
+        debug();
+    }
+    
+    void debug() const {
+        DBUG(("x %i y %i w %i h %i", getX(), getY(), getWidth(), getHeight()));
+    }
+    
+    bool initialMarking = true; // set to false after square has been set and ready to use to modify points
+    
+    void findAndAddContainedPoints(SplineOscillatorPoint* firstPoint_in) {
+        if(okPointer(firstPoint_in)) {
+            firstPoint = firstPoint_in;
+            SplineOscillatorPoint* p = firstPoint;
+            while(p) {
+                if(pointIsWithin(p)) {
+                    points.insert(p);
+                }
+                p = p->getNextNotOff();
+            }
+        } else {
+            DBUG(("WARNING: bad firstPoint_in %p", firstPoint_in));
+        }
+    }
+    
+    const vector<Point<double>> getAllPoints() {
+        vector<Point<double>> allPoints;
+        
+        if(okPointer(firstPoint)) {
+            SplineOscillatorPoint* p = firstPoint;
+            while(p) {
+                allPoints.push_back({p->x, p->y});
+
+                if(p->type == SplinePointType::QUADRATIC) {
+                    allPoints.push_back({p->controlX, p->controlY});
+                }
+                if(p->type == SplinePointType::CUBIC) {
+                    allPoints.push_back({p->controlX2, p->controlY2});
+                }
+                
+                p = p->getNextNotOff();
+            }
+        } else {
+            DBUG(("WARNING: bad firstPoint %p", firstPoint));
+        }
+        
+        return allPoints;
+    }
+    
+    const vector<Point<int>> getContainedPoints() {
+        vector<Point<int>> containedPoints;
+        
+        for(const auto& p : points) {
+            if(isWithin(p->x, p->y)) {
+                containedPoints.push_back({static_cast<int>(p->x), static_cast<int>(p->y)});
+            }
+
+            if(p->type == SplinePointType::QUADRATIC || p->type == SplinePointType::CUBIC) {
+                if(isWithin(p->controlX, p->controlY)) {
+                    containedPoints.push_back({static_cast<int>(p->controlX), static_cast<int>(p->controlY)});
+                }
+            }
+            
+            if(p->type == SplinePointType::CUBIC) {
+                if(isWithin(p->controlX2, p->controlY2)) {
+                    containedPoints.push_back({static_cast<int>(p->controlX2), static_cast<int>(p->controlY2)});
+                }
+            }
+        }
+        return containedPoints;
+    }
+    
+    void scalePoints(const Rectangle<int>& originalMarking, const Rectangle<int>& newMarking) {
+        for(const auto& p : points) {
+            if(isWithin(p->x, p->y)) {
+                scaleXY(p->x, p->y, originalMarking, newMarking);
+            }
+            
+            if(p->type == SplinePointType::QUADRATIC || p->type == SplinePointType::CUBIC) {
+                if(isWithin(p->controlX, p->controlY)) {
+                    scaleXY(p->controlX, p->controlY, originalMarking, newMarking);
+                }
+            }
+            
+            if(p->type == SplinePointType::CUBIC) {
+                if(isWithin(p->controlX2, p->controlY2)) {
+                    scaleXY(p->controlX2, p->controlY2, originalMarking, newMarking);
+                }
+            }
+        }
+    }
+    
+    const bool isBeingHandleDragged() {return beingHandleDragged;}
+    const bool isBeingDragged() {return beingDragged;}
+    
+    const vector<Rectangle<int>> getHandles() {
+        return {
+            {getX()-handleSize, getY()-handleSize, handleSize, handleSize},
+            {getRight(), getY()-handleSize, handleSize, handleSize},
+            {getX()-handleSize, getBottom(), handleSize, handleSize},
+            {getRight(), getBottom(), handleSize, handleSize}
+        };
+    }
+    
+    //return true if handle was hit
+    bool hitHandle(const int x_in, const int y_in) {
+        int i = 0;
+        for(const auto& h : getHandles()) {
+            if(isWithinRect(x_in, y_in, h)) {
+                beingHandleDragged = true;
+                handleDragged = static_cast<Handle>(i);
+                return true;
+            }
+            i++;
+        }
+        return false;
+    }
+    
+    void dragHandle(const int x_in, const int y_in) {
+        if(!beingHandleDragged) {
+            DBUG(("WARNING: not handledragged"));
+            return;
+        }
+        
+        Rectangle<int> originalMarking(*this);
+        Rectangle<int> newMarking(*this);
+        
+        if(handleDragged == upLeft || handleDragged == upRight) {
+            if(y_in > getBottom() - handleSize) {
+                DBUG(("too narrow"));
+                return;
+            }
+            newMarking.setTop(y_in);
+        } else {
+            if(y_in < getY() + handleSize) {
+                DBUG(("too narrow"));
+                return;
+            }
+            newMarking.setBottom(y_in);
+        }
+        
+        if(handleDragged == upLeft || handleDragged == downLeft) {
+            if(x_in > getRight() - handleSize) {
+                DBUG(("too narrow"));
+                return;
+            }
+            newMarking.setLeft(x_in);
+        } else {
+            if(x_in < getX() + handleSize) {
+                DBUG(("too narrow"));
+                return;
+            }
+            newMarking.setRight(x_in);
+        }
+        
+        if(rectWithinRect(boundaries, newMarking)) {
+            scalePoints(originalMarking, newMarking);
+            setBounds(newMarking.getX(), newMarking.getY(), newMarking.getWidth(), newMarking.getHeight());
+        }
+    }
+    
+    void mouseUp() {
+        beingHandleDragged = false;
+        beingDragged = false;
+        initialMarking = false;
+        minimizeRect();
+    }
+    
+    //Dragging of main "body"
+    void drag(const int x_in, const int y_in) {
+        Rectangle<int> originalMarking(*this);
+        Rectangle<int> newMarking(*this);
+        if(beingDragged) {
+            newMarking.setX(x_in - dragOffset.getX());
+            newMarking.setY(y_in - dragOffset.getY());
+        } else {
+            dragOffset.setXY(x_in - getX(), y_in - getY());
+        }
+        
+        beingDragged = true;
+        
+        if(rectWithinRect(boundaries, newMarking)) {
+            scalePoints(originalMarking, newMarking);
+            setBounds(newMarking.getX(), newMarking.getY(), newMarking.getWidth(), newMarking.getHeight());
+        }
+    }
+    
+    Rectangle<int> boundaries;
+
+private:
+    SplineOscillatorPoint* firstPoint = nullptr;
+    bool beingHandleDragged = false;
+    bool beingDragged = false;
+    Point<int> dragOffset;
+    enum Handle {upLeft, upRight, downLeft, downRight};
+    Handle handleDragged;
+    const bool pointIsWithin(SplineOscillatorPoint* p) const {
+        if(p->type == SplinePointType::START || p->type == SplinePointType::LINEAR) {
+            return isWithin(p->x, p->y);
+        } else if(p->type == SplinePointType::QUADRATIC) {
+            return isWithin(p->x, p->y) || isWithin(p->controlX, p->controlY);
+        } else if(p->type == SplinePointType::CUBIC) {
+            return isWithin(p->x, p->y) || isWithin(p->controlX, p->controlY) || isWithin(p->controlX2, p->controlY2);
+        }
+        DBUG(("not handled type %i", p->type))
+        return false;
+    }
+    
+    const bool isWithin(const int x_in, const int y_in) const {
+        return isWithinRect(x_in, y_in, *this);
+    }
+    
+    void minimizeRect() {
+        int left = 10000;
+        int right = -1;
+        int up = 10000;
+        int down = -1;
+        if(getContainedPoints().size() >= 2) {
+            for(const auto& point : getContainedPoints()) {
+                if(point.getX() < left) {
+                    left = point.getX()-1;
+                }
+                if(point.getX() > right) {
+                    right = point.getX()+1;
+                }
+                if(point.getY() < up) {
+                    up = point.getY()-1;
+                }
+                if(point.getY() > down) {
+                    down = point.getY()+1;
+                }
+            }
+            
+            boundaries = {0, 0, static_cast<int>(firstPoint->maxX), static_cast<int>(firstPoint->maxY)};
+            for(const auto& point : getAllPoints()) {
+                if(point.getX() < left && point.getX() > boundaries.getX()) {
+                    boundaries.setX(point.getX()-1);
+                }
+                if(point.getX() > right && point.getX() < boundaries.getRight()) {
+                    boundaries.setRight(point.getX()+1);
+                }
+//                if(point.getY() < up && point.getY() < boundaries.getY()) {
+//                    boundaries.setY(point.getY()-1);
+//                }
+//                if(point.getY() > down && point.getY() < boundaries.getBottom()) {
+//                    boundaries.setBottom(point.getY()+1);
+//                }
+            }
+            
+            setX(left);
+            setY(up);
+            setWidth(right-left);
+            setHeight(down-up);
+        } else {
+            DBUG(("Too few points, should be removed"));
+        }
+    }
+    
+    set<SplineOscillatorPoint*> points;
+};
 
 static SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type);
 
@@ -253,31 +585,55 @@ void SplineOscillatorEditor::mouseDown(const MouseEvent& event) {
         point = point->getNext();
     }
     
-    SplineOscillatorPoint* pointHit = updateStates(event);
-    if(pointHit) {
-        //DBUG(("pointHit %i", pointHit->pointNr));
-        firstPoint->resetSelectedAllPoints();
-        firstPoint->resetModulationPointsBeingDragged();
-
-        if(pointHit->overPoint) {
-            pointHit->selected[0] = true;
-        } else if (pointHit->overControlPoint) {
-            pointHit->selected[1] = true;
-        } else if (pointHit->overControlPoint2) {
-            pointHit->selected[2] = true;
-        }
+    ScopedLock sml(squareMarkingLock);
+    
+    if(squareMarking && isWithinRect(event.x, event.y, *squareMarking.get())) {
         if(event.mods.isRightButtonDown()) {
-            DBUG(("right click, point %i", pointHit->pointNr));
-            showPointPopupMenu(pointHit);
-            return;
+            DBUG(("TODO: show menu for squareMarking"));
+        } else {
+            squareMarking->drag(event.x, event.y);
         }
     } else {
-        firstPoint->resetSelectedAllPoints();
-        firstPoint->resetModulationPointsBeingDragged();
-        if(event.mods.isRightButtonDown()) {
-            global_pointPopupMenuData.editor = this;
-            global_pointPopupMenuData.firstPoint = firstPoint;
-            showNonPointPopupMenu();
+        SplineOscillatorPoint* pointHit = updateStates(event);
+        if(pointHit) {
+            squareMarking.reset();
+            //DBUG(("pointHit %i", pointHit->pointNr));
+            firstPoint->resetSelectedAllPoints();
+            firstPoint->resetModulationPointsBeingDragged();
+            
+            if(pointHit->overPoint) {
+                pointHit->selected[0] = true;
+            } else if (pointHit->overControlPoint) {
+                pointHit->selected[1] = true;
+            } else if (pointHit->overControlPoint2) {
+                pointHit->selected[2] = true;
+            }
+            if(event.mods.isRightButtonDown()) {
+                DBUG(("right click, point %i", pointHit->pointNr));
+                showPointPopupMenu(pointHit);
+                return;
+            }
+        } else {
+            firstPoint->resetSelectedAllPoints();
+            firstPoint->resetModulationPointsBeingDragged();
+            if(event.mods.isRightButtonDown()) {
+                global_pointPopupMenuData.editor = this;
+                global_pointPopupMenuData.firstPoint = firstPoint;
+                showNonPointPopupMenu();
+            }
+            
+            if(squareMarking) {
+                const bool handleWasHit = squareMarking->hitHandle(event.x, event.y);
+                DBUG(("handleWasHit %i", handleWasHit));
+                if(!handleWasHit) {
+                    squareMarking.reset();
+                    squareMarking = make_shared<SquareMarking>(event.x, event.y);
+                    
+                }
+            } else {
+                squareMarking.reset();
+                squareMarking = make_shared<SquareMarking>(event.x, event.y);
+            }
         }
     }
     
@@ -447,56 +803,73 @@ void SplineOscillatorEditor::mouseDrag (const MouseEvent& event) {
         DBUG(("WARNING, no firstPoint"));
         return;
     }
-    bool found = false;   
+    
+    if(squareMarking && squareMarking->isBeingDragged() && isWithinRect(event.x, event.y, *squareMarking.get())) {
+        squareMarking->drag(event.x, event.y);
+        repaint();
+    } else {
+        bool found = false;
         
-    SplineOscillatorPoint* point = firstPoint;
-    while(point) {
-        if(point->overAnyPoint()) {
-            firstPoint->resetModulationPointsBeingDragged();
-            found = true;
-            break;
-        }
-        for(int subPoint = 0 ; subPoint < 3 ; subPoint++) {
-            if(!point->overAnyPoint() && point->modulationPoint[subPoint].currentlyBeingDragged) {
-                DBUG(("dragging subpoint %i", subPoint));
-                point->setModulationFromCoordinates(event.x, event.y, subPoint);
-                repaint();
+        SplineOscillatorPoint* point = firstPoint;
+        while(point) {
+            if(point->overAnyPoint()) {
+                firstPoint->resetModulationPointsBeingDragged();
+                found = true;
                 break;
             }
+            for(int subPoint = 0 ; subPoint < 3 ; subPoint++) {
+                if(!point->overAnyPoint() && point->modulationPoint[subPoint].currentlyBeingDragged) {
+                    DBUG(("dragging subpoint %i", subPoint));
+                    point->setModulationFromCoordinates(event.x, event.y, subPoint);
+                    repaint();
+                    break;
+                }
+            }
+            point = point->getNext();
         }
-        point = point->getNext();
-    }
-    bool anythingActivedone = false;
-    if(found && point && point->overPoint) {
-        anythingActivedone = true;
-        point->setY(event.y);
-        if(point->type != START || !point->isLastPoint()) {
-            point->setX(event.x);
+        bool anythingActiveDone = false;
+        if(found && point && point->overPoint) {
+            anythingActiveDone = true;
+            point->setY(event.y);
+            if(point->type != START || !point->isLastPoint()) {
+                point->setX(event.x);
+            }
+            repaint();
         }
-        repaint();
-    }
-    if(found && point && point->overControlPoint) {
-        anythingActivedone = true;
-        point->setControlX(event.x);
-        point->setControlY(event.y);
-
-        repaint();
-    }
-    if(found && point && point->overControlPoint2) {
-        anythingActivedone = true;
-        point->setControlX2(event.x);
-        point->setControlY2(event.y);
-        
-        repaint();
-    }
-    if(firstPoint) {
-        firstPoint->sanityCheckAndFixPoints();
-        if(anythingActivedone) {
-            firstPoint->updateParamsValues();
-            updateParamsTimer.restartCountDown(firstPoint);
+        if(found && point && point->overControlPoint) {
+            anythingActiveDone = true;
+            point->setControlX(event.x);
+            point->setControlY(event.y);
+            
+            repaint();
         }
-    } else {
-        DBUG(("WARNING, firstPoint is null"));
+        if(found && point && point->overControlPoint2) {
+            anythingActiveDone = true;
+            point->setControlX2(event.x);
+            point->setControlY2(event.y);
+            
+            repaint();
+        }
+        if(firstPoint) {
+            firstPoint->sanityCheckAndFixPoints();
+            if(anythingActiveDone) {
+                firstPoint->updateParamsValues();
+                updateParamsTimer.restartCountDown(firstPoint);
+            } else {
+                ScopedLock sml(squareMarkingLock);
+                if(squareMarking && squareMarking->initialMarking) {
+                    squareMarking->updateMarking(event.x, event.y);
+                    squareMarking->findAndAddContainedPoints(firstPoint);
+                    repaint();
+                }
+                if(squareMarking && squareMarking->isBeingHandleDragged()) {
+                    squareMarking->dragHandle(event.x, event.y);
+                    repaint();
+                }
+            }
+        } else {
+            DBUG(("WARNING, firstPoint is null"));
+        }
     }
 }
 
@@ -535,6 +908,15 @@ void SplineOscillatorEditor::mouseUp (const MouseEvent& event) {
     firstPoint->resetModulationPointsBeingDragged();
     
     mouseOver = true;
+
+    ScopedLock sml(squareMarkingLock);
+    if(squareMarking) {
+        squareMarking->mouseUp();
+        if(squareMarking->getContainedPoints().size() < 2) {
+            squareMarking.reset();
+        }
+    }
+    
     repaint();
 }
 
@@ -726,6 +1108,36 @@ void SplineOscillatorEditor::paint(Graphics& g) {
             g.drawText(cornerInfoCallback(), getWidth()-200, 0, 200, 20, juce::Justification::topRight);
         } else {
             DBUG(("WARNING: no lastPoint"));
+        }
+    }
+    
+    const ScopedLock sml(squareMarkingLock);
+    if(squareMarking) {
+        g.setColour(getColors()->color1.withAlpha((uint8)64));
+        g.fillRect(*squareMarking.get());
+        g.setColour(getColors()->color3.withAlpha((uint8)128));
+        g.drawRect(*squareMarking.get(), 1);
+        
+        for(const auto& p : squareMarking->getContainedPoints()) {
+            g.setColour(getColors()->color3.withAlpha((uint8)96));
+            g.drawEllipse(p.x-7, p.y-7, 14, 14, 1);
+            g.setColour(getColors()->color2.withAlpha((uint8)256));
+            g.drawEllipse(p.x-8, p.y-8, 16, 16, 1);
+            g.setColour(getColors()->color3.withAlpha((uint8)128));
+            g.drawEllipse(p.x-9, p.y-9, 18, 18, 1);
+            g.setColour(getColors()->color2.withAlpha((uint8)256));
+            g.drawEllipse(p.x-10, p.y-10, 20, 20, 1);
+            g.setColour(getColors()->color3.withAlpha((uint8)64));
+            g.drawEllipse(p.x-11, p.y-11, 22, 22, 1);
+        }
+        
+        if(!squareMarking->initialMarking) {
+            for(const Rectangle<int>& rect : squareMarking->getHandles()) {
+                g.setColour(getColors()->color2.withAlpha((uint8)196));
+                g.fillRect(rect);
+                g.setColour(getColors()->color3);
+                g.drawRect(rect, 1);
+            }
         }
     }
 }
@@ -947,10 +1359,10 @@ void SplineOscillatorEditor::showNonPointPopupMenu() {
     m.addItem (2002, "debug", true, false);
 #endif
     if(menuSaveShapeCallback) {
-        m.addItem (2003, "save shape",  true, false);
+        m.addItem (2003, "Save shape",  true, false);
     }
     if(menuLoadShapeCallback) {
-        m.addItem (2004, "load shape",  true, false);
+        m.addItem (2004, "Load shape",  true, false);
     }
     
     if(quickLoadCallback && fileChosenCallback) {
@@ -965,11 +1377,11 @@ void SplineOscillatorEditor::showNonPointPopupMenu() {
                 nr++;
                 DBUG(("path %s", path.c_str()));
             }
-            m.addSubMenu (TRANS ("quick load"), quickLoadMenu);
+            m.addSubMenu (TRANS ("Quick load"), quickLoadMenu);
         }
     }
     
-    m.addItem(2005, "grid lock", true, splineEditorGridLocked);
+    m.addItem(2005, "Grid lock", true, splineEditorGridLocked);
     
     m.showMenuAsync (PopupMenu::Options(),
                      ModalCallbackFunction::forComponent (pointPopupMenuCallback, (SplineOscillatorEditor*)this));    
@@ -1002,7 +1414,7 @@ void SplineOscillatorEditor::showPointPopupMenu(SplineOscillatorPoint* point) {
     bool startOrEnd = ((point->isLastPoint() || point->isFirstPoint()) && subPoint == 0);
     
     if(!startOrEnd) {
-        m.addItem (4, TRANS ("delete"), true, false);
+        m.addItem (4, TRANS ("Delete"), true, false);
     }
     
     if(modulationAllowed) {
@@ -2903,14 +3315,14 @@ SplineOscillatorPoint* SplineOscillatorPoint::getNext() {
     if(nextPoint && !isLastPoint()) {
         return nextPoint;
     }
-    return 0;
+    return nullptr;
 }
 
 SplineOscillatorPoint* SplineOscillatorPoint::getNextNotOff() {
     if(nextPoint && !isLastPoint() && nextPoint->type != OFF) {
         return nextPoint;
     }
-    return 0;
+    return nullptr;
 }
 
 //.......................UpdateParamsFromPointsTimer......................
