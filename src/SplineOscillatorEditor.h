@@ -77,6 +77,7 @@ public:
     
     bool isLastPoint();
     bool isFirstPoint() {return this == startPoint;}
+    bool isEndPoint() {return this == endPoint;}
     SplineOscillatorPoint* getFirstPoint();
     SplineOscillatorPoint* getLastPoint();
     void resetOver();
@@ -91,8 +92,8 @@ public:
     bool overAnyPoint() {return overPoint || overControlPoint || overControlPoint2;}
     bool unsetSelected();
     
-    void setX(double x_in);
-    void setY(double y_in);
+    void setX(double x_in, const int subPoint = 0);
+    void setY(double y_in, const int subPoint = 0);
     void setControlX(double x_in);
     void setControlY(double u_in);
     void setControlX2(double x_in);
@@ -217,6 +218,8 @@ public:
     virtual void mouseUp (const MouseEvent& event) override;
     virtual void mouseDrag (const MouseEvent& event) override;
     virtual void mouseDoubleClick (const MouseEvent& event) override;
+    
+    virtual bool keyPressed (const KeyPress& key) override;
     
     virtual bool isInterestedInDragSource (const SourceDetails& dragSourceDetails) override {
         String name = dragSourceDetails.sourceComponent->getName();

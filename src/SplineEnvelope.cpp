@@ -91,12 +91,10 @@ bool SplineEnvelope::checkNeedToUpdate(double* splineAmplitudeData, const int sa
 
 static CriticalSection threadLock; //just to only process one SplineEnvelope thread at once, more to avoid cpu burst than for safety
 void SplineEnvelope::run() {
-    DBGRAII;
     do {
-        DBUG(("start round"));
         needReRunThread = false;
         if(sampleFramesForThread <= 0) {
-            DBUG(("WARNING: sampleFramesForThread <= 0"));
+            DBUG(("WARNING: sampleFramesForThread <= 0.  sampleFramesForThread=%i", sampleFramesForThread));
             return;
         }
         threadBufferOKToCopy = false;

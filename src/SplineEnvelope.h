@@ -79,7 +79,7 @@ public:
             }
         }
         isReady = true;
-        DBUG(("needToUpdate %i", needToUpdate));
+//        DBUG(("needToUpdate %i", needToUpdate));
         return needToUpdate;
     }
     

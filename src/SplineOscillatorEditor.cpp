@@ -12,7 +12,7 @@
 #include "SplineOscillatorEditor.h"
 
 #include <set>
-
+#include <algorithm>
 #include "StandardColors.h"
 //#include "parameterEnum.h"
 #include "EventAggregator.h"
@@ -25,7 +25,7 @@
 #include "windowshacks.h"
 //#include "PluginProcessor.h"
 
-const bool isWithinRect(const int x_in, const int y_in, const Rectangle<int>& rect) {
+const bool isWithinRect(const double x_in, const double y_in, const Rectangle<double>& rect) {
     if(x_in < rect.getX()) return false;
     if(y_in < rect.getY()) return false;
     if(x_in > rect.getRight()) return false;
@@ -33,7 +33,7 @@ const bool isWithinRect(const int x_in, const int y_in, const Rectangle<int>& re
     return true;
 }
 
-const bool rectWithinRect(const Rectangle<int>& outerRect, const Rectangle<int>& innerRect) {
+const bool rectWithinRect(const Rectangle<double>& outerRect, const Rectangle<double>& innerRect) {
     if(innerRect.getX() < outerRect.getX()) return false;
     if(innerRect.getRight() > outerRect.getRight()) return false;
     if(innerRect.getY() < outerRect.getY()) return false;
@@ -42,58 +42,49 @@ const bool rectWithinRect(const Rectangle<int>& outerRect, const Rectangle<int>&
 }
 
 template<class F, class R> void scaleXY(F& x, F& y, const Rectangle<R>& oldRect, const Rectangle<R>& newRect) {
-    const F fromLeft = x - oldRect.getX();
-    const F xFactor = fromLeft / oldRect.getWidth();
-    x = newRect.getX() + (xFactor * newRect.getWidth());
-    const F fromTop = y - oldRect.getY();
-    const F yFactor = fromTop / oldRect.getHeight();
-    y = newRect.getY() + (yFactor * newRect.getHeight());
+    DBUG(("before after scale x %f y %f", x, y));
+    const long double fromLeft = x - oldRect.getX();
+    const long double xFactor = fromLeft / (long double)oldRect.getWidth();
+    x = newRect.getX() + (xFactor * (long double)newRect.getWidth());
+    const long double fromTop = y - oldRect.getY();
+    const long double yFactor = fromTop / (long double)oldRect.getHeight();
+    y = newRect.getY() + (yFactor * (long double)newRect.getHeight());
+
+    if(xFactor > 1.01) {
+        DBUG(("too big xfactor %f", xFactor));
+    }
+    if(xFactor < -0.01) {
+        DBUG(("too small xfactor %f", xFactor));
+    }
     
-//    while(y > newRect.getBottom()) {
-//        DBUG(("y--"));
-//        y--;
-//    }
-//    while(y < newRect.getY()) {
-//        DBUG(("y++"));
-//        y++;
-//    }
-//    while(x > newRect.getRight()) {
-//        DBUG(("x--"));
-//        x--;
-//    }
-//    while(x < newRect.getX()) {
-//        DBUG(("x++"));
-//        x++;
-//    }
-    DBUG(("x %f y %f", x, y));
-    DBUG(("newRect %i %i %i %i", newRect.getX(), newRect.getY(), newRect.getWidth(), newRect.getHeight()));
+    DBUG(("after scale x %f y %f", x, y));
+    DBUG(("newRect %f %f %f %f", newRect.getX(), newRect.getY(), newRect.getWidth(), newRect.getHeight()));
 }
 
 CriticalSection squareMarkingLock;
-class SquareMarking : public Rectangle<int>
+class SquareMarking : public Rectangle<double>
 {
 public:
     static const int handleSize = 15;
-    SquareMarking(const int x_in, const int y_in) {
+    SquareMarking(const int x_in, const int y_in, SplineOscillatorPoint* firstPoint_in) : firstPoint(firstPoint_in) {
+        if(!okPointer(firstPoint)) {
+            DBUG(("bad firstPoint %p", firstPoint));
+        }
         setX(x_in);
         setY(y_in);
         setWidth(0);
         setHeight(0);
+        initialMarkingPoint = {static_cast<double>(x_in), static_cast<double>(y_in)};
     }
     
-    void updateMarking(const int x_in, const int y_in) {
-        if(x_in > getX()) {
-            setRight(x_in);
-        } else {
-            setLeft(x_in);
-        }
+    void updateMarking(const double x_in, const double y_in) {
+        auto xmm = minmax({x_in, initialMarkingPoint.getX()});
+        setX(xmm.first);
+        setWidth(xmm.second - xmm.first);
         
-        if(y_in > getY()) {
-            setBottom(y_in);
-        } else {
-            setTop(y_in);
-        }
-        debug();
+        auto ymm = minmax({y_in, initialMarkingPoint.getY()});
+        setY(ymm.first);
+        setHeight(ymm.second - ymm.first);
     }
     
     void debug() const {
@@ -102,19 +93,26 @@ public:
     
     bool initialMarking = true; // set to false after square has been set and ready to use to modify points
     
-    void findAndAddContainedPoints(SplineOscillatorPoint* firstPoint_in) {
-        if(okPointer(firstPoint_in)) {
-            firstPoint = firstPoint_in;
+    void findAndAddContainedPoints(const bool fullHeight = false) {
+        containedPoints.clear();
+        if(okPointer(firstPoint)) {
             SplineOscillatorPoint* p = firstPoint;
+            Rectangle<double> clipRect(*this);
+            if(fullHeight) {
+                clipRect.setY(0);
+                clipRect.setHeight(firstPoint->maxY);
+            }
             while(p) {
-                if(pointIsWithin(p)) {
-                    points.insert(p);
+                bool overSubPoints[3] = {};
+                if(pointIsWithin(p, clipRect, overSubPoints)) {
+                    containedPoints.push_back({p, overSubPoints});
                 }
                 p = p->getNextNotOff();
             }
         } else {
-            DBUG(("WARNING: bad firstPoint_in %p", firstPoint_in));
+            DBUG(("WARNING: bad firstPoint %p", firstPoint));
         }
+//        DBUG(("getContainedPoints().size() %i", getContainedPoints().size()));
     }
     
     const vector<Point<double>> getAllPoints() {
@@ -123,13 +121,13 @@ public:
         if(okPointer(firstPoint)) {
             SplineOscillatorPoint* p = firstPoint;
             while(p) {
-                allPoints.push_back({p->x, p->y});
+                allPoints.push_back({static_cast<double>(p->x), static_cast<double>(p->y)});
 
-                if(p->type == SplinePointType::QUADRATIC) {
-                    allPoints.push_back({p->controlX, p->controlY});
+                if(p->type == SplinePointType::QUADRATIC || p->type == SplinePointType::CUBIC) {
+                    allPoints.push_back({static_cast<double>(p->controlX), static_cast<double>(p->controlY)});
                 }
                 if(p->type == SplinePointType::CUBIC) {
-                    allPoints.push_back({p->controlX2, p->controlY2});
+                    allPoints.push_back({static_cast<double>(p->controlX2), static_cast<double>(p->controlY2)});
                 }
                 
                 p = p->getNextNotOff();
@@ -141,53 +139,65 @@ public:
         return allPoints;
     }
     
-    const vector<Point<int>> getContainedPoints() {
-        vector<Point<int>> containedPoints;
+    const vector<Point<double>> getContainedSubPoints() const {
+        vector<Point<double>> points;
         
-        for(const auto& p : points) {
-            if(isWithin(p->x, p->y)) {
-                containedPoints.push_back({static_cast<int>(p->x), static_cast<int>(p->y)});
-            }
-
-            if(p->type == SplinePointType::QUADRATIC || p->type == SplinePointType::CUBIC) {
-                if(isWithin(p->controlX, p->controlY)) {
-                    containedPoints.push_back({static_cast<int>(p->controlX), static_cast<int>(p->controlY)});
-                }
-            }
-            
-            if(p->type == SplinePointType::CUBIC) {
-                if(isWithin(p->controlX2, p->controlY2)) {
-                    containedPoints.push_back({static_cast<int>(p->controlX2), static_cast<int>(p->controlY2)});
+        for(const auto& p : containedPoints) {
+            for(int i = 0 ; i < 3 ; i++) {
+                if(p.subPoint[i]) {
+                    points.push_back(p.getPoint(i));
                 }
             }
         }
-        return containedPoints;
+        return points;
     }
     
-    void scalePoints(const Rectangle<int>& originalMarking, const Rectangle<int>& newMarking) {
-        for(const auto& p : points) {
-            if(isWithin(p->x, p->y)) {
-                scaleXY(p->x, p->y, originalMarking, newMarking);
-            }
-            
-            if(p->type == SplinePointType::QUADRATIC || p->type == SplinePointType::CUBIC) {
-                if(isWithin(p->controlX, p->controlY)) {
-                    scaleXY(p->controlX, p->controlY, originalMarking, newMarking);
+    void scalePoints(const Rectangle<double>& originalMarking, const Rectangle<double>& newMarking) {
+        int containedPointNr = 0;
+        for(auto& p : containedPoints) {
+            for(int i = 0 ; i < 3 ; i++) {
+                if(p.subPoint[i]) {
+                    double x = p.getX(i);
+                    double y = p.getY(i);
+                    if(x < originalMarking.getX()) {
+                        DBUG(("x %f, origMark x %f - containedPointNr %i", x, originalMarking.getX(), containedPointNr));
+                    }
+//                    scaleXY(p.getX(i), p.getY(i), originalMarking, newMarking);
+                    DBUG(("before scale x %f y%f - containedPointNr %i - subPoint %i", x, y, containedPointNr, i))
+                    scaleXY(x, y, originalMarking, newMarking);
+                    DBUG(("after scale x %f y%f - containedPointNr %i - subPoint %i", x, y, containedPointNr, i))
+                    p.rawSetX(x, i);
+                    p.rawSetY(y, i);
                 }
             }
-            
-            if(p->type == SplinePointType::CUBIC) {
-                if(isWithin(p->controlX2, p->controlY2)) {
-                    scaleXY(p->controlX2, p->controlY2, originalMarking, newMarking);
+            containedPointNr++;
+        }
+
+        //Just a safety round to make sure values are sane.
+        for(auto& p : containedPoints) {
+            for(int i = 0 ; i < 3 ; i++) {
+                if(p.subPoint[i]) {
+                    double x = p.getX(i);
+                    double y = p.getY(i);
+                    p.p->setX(x, i);
+                    p.p->setY(y, i);
+                    if(x != p.getX(i)) {
+                        DBUG(("WARNING: x has changed %f", p.getX(i)));
+                    }
+                    if(y != p.getY(i)) {
+                        DBUG(("WARNING: y has changed %f", p.getY(i)));
+                    }
                 }
             }
         }
+        
+        firstPoint->updateParamsValues();
     }
     
     const bool isBeingHandleDragged() {return beingHandleDragged;}
     const bool isBeingDragged() {return beingDragged;}
     
-    const vector<Rectangle<int>> getHandles() {
+    const vector<Rectangle<double>> getHandles() {
         return {
             {getX()-handleSize, getY()-handleSize, handleSize, handleSize},
             {getRight(), getY()-handleSize, handleSize, handleSize},
@@ -210,14 +220,17 @@ public:
         return false;
     }
     
-    void dragHandle(const int x_in, const int y_in) {
+    void dragHandle(double x_in, double y_in) {
         if(!beingHandleDragged) {
             DBUG(("WARNING: not handledragged"));
             return;
         }
         
-        Rectangle<int> originalMarking(*this);
-        Rectangle<int> newMarking(*this);
+        Rectangle<double> originalMarking(*this);
+        Rectangle<double> newMarking(*this);
+
+        setBetween(x_in, boundaries.getX(), boundaries.getRight());
+        setBetween(y_in, boundaries.getY(), boundaries.getBottom());
         
         if(handleDragged == upLeft || handleDragged == upRight) {
             if(y_in > getBottom() - handleSize) {
@@ -254,63 +267,123 @@ public:
     }
     
     void mouseUp() {
+        if(initialMarking) {
+            minimizeRect();
+        }
+        
         beingHandleDragged = false;
         beingDragged = false;
         initialMarking = false;
-        minimizeRect();
     }
     
     //Dragging of main "body"
-    void drag(const int x_in, const int y_in) {
-        Rectangle<int> originalMarking(*this);
-        Rectangle<int> newMarking(*this);
+    void drag(const double x_in, const double y_in) {
+        DBUG(("\n\n\nDRAGSTART"));
+        double startX = containedPoints[0].p->x;
+
+        const Rectangle<double> originalMarking(*this);
+        Rectangle<double> newMarking(*this);
         if(beingDragged) {
-            newMarking.setX(x_in - dragOffset.getX());
-            newMarking.setY(y_in - dragOffset.getY());
+            double offsetX = x_in - dragOffset.getX();
+            double offsetY = y_in - dragOffset.getY();
+
+            setBetween(offsetX, boundaries.getX(), boundaries.getRight() - newMarking.getWidth());
+            setBetween(offsetY, boundaries.getY(), boundaries.getBottom() - newMarking.getHeight());
+            DBUG(("offsetX %f", offsetX));
+            newMarking.setX(offsetX);
+            newMarking.setY(offsetY);
         } else {
             dragOffset.setXY(x_in - getX(), y_in - getY());
         }
         
         beingDragged = true;
         
+        for(auto& p : containedPoints) {
+            if(p.p->isFirstPoint() && p.subPoint[0]) {
+                newMarking.setX(0);
+            }
+            if(p.p->isEndPoint() && p.subPoint[0]) {
+                newMarking.setX(firstPoint->maxX - newMarking.getWidth());
+            }
+        }
+        
+        double dragDistanceX = newMarking.getX() - originalMarking.getX();
+        DBUG(("getContainedPoints().size() %i, dragdistande x %f, dragdistance y %f, startX %f", getContainedSubPoints().size(), dragDistanceX, newMarking.getY() - originalMarking.getY(), startX));
+        
         if(rectWithinRect(boundaries, newMarking)) {
             scalePoints(originalMarking, newMarking);
             setBounds(newMarking.getX(), newMarking.getY(), newMarking.getWidth(), newMarking.getHeight());
+        } else {
+            DBUG(("outside boundaries boundaries x %f y %f - newMarking.getX() %f newMarking.getY() %f", boundaries.getX(), boundaries.getY(), newMarking.getX(), newMarking.getY()));
+        }
+        
+        double endX = containedPoints[0].p->x;
+        double movement = fabs(startX-endX);
+        if(movement > fabs(dragDistanceX) + 0.001) {
+            DBUG(("WARNING: point has moved more than dragDistance, dragDistanceX %f, startX %f, endX %f, movement %f", dragDistanceX, startX, endX, movement));
+        }
+        if(endX + 0.001 < newMarking.getX()) {
+            DBUG(("WARNING: point is left of new marking"));
         }
     }
     
-    Rectangle<int> boundaries;
+    void removeMarkedPoints() {
+        for(auto& point : containedPoints) {
+            for(int i = 2 ; i >= 1 ; i--) {
+                if(point.subPoint[i]) {
+                    point.p->deletePoint(i);
+                }
+            }
+        }
+        for(auto& point : containedPoints) {
+            if(point.subPoint[0]) {
+                point.p->deletePoint(0);
+            }
+        }
+    }
+    
+    Rectangle<double> boundaries;
 
 private:
+    Point<double> initialMarkingPoint;//used during initial marking to remember where first started dragging
     SplineOscillatorPoint* firstPoint = nullptr;
     bool beingHandleDragged = false;
     bool beingDragged = false;
-    Point<int> dragOffset;
+    Point<double> dragOffset;
     enum Handle {upLeft, upRight, downLeft, downRight};
     Handle handleDragged;
-    const bool pointIsWithin(SplineOscillatorPoint* p) const {
-        if(p->type == SplinePointType::START || p->type == SplinePointType::LINEAR) {
-            return isWithin(p->x, p->y);
-        } else if(p->type == SplinePointType::QUADRATIC) {
-            return isWithin(p->x, p->y) || isWithin(p->controlX, p->controlY);
-        } else if(p->type == SplinePointType::CUBIC) {
-            return isWithin(p->x, p->y) || isWithin(p->controlX, p->controlY) || isWithin(p->controlX2, p->controlY2);
+    
+    const bool pointIsWithin(SplineOscillatorPoint* p, const Rectangle<double>& withinRect, bool* overSubPoints) const {
+        overSubPoints[0] = overSubPoints[1] = overSubPoints[2] = false;
+        
+        overSubPoints[0] = isWithinRect(p->x, p->y, withinRect);
+        if(p->type == SplinePointType::QUADRATIC || p->type == SplinePointType::CUBIC) {
+            overSubPoints[1] = isWithinRect(p->controlX, p->controlY, withinRect);
         }
-        DBUG(("not handled type %i", p->type))
-        return false;
+        if(p->type == SplinePointType::CUBIC) {
+            overSubPoints[2] = isWithinRect(p->controlX2, p->controlY2, withinRect);
+        }
+        return overSubPoints[0] || overSubPoints[1] || overSubPoints[2];
     }
     
-    const bool isWithin(const int x_in, const int y_in) const {
-        return isWithinRect(x_in, y_in, *this);
-    }
+//    const bool isWithinLeftAndRight(const int x_in, const int y_in) const {
+//        if(!firstPoint) {
+//            DBUG(("WARNING: no firstPoint"));
+//            return false;
+//        }
+//        Rectangle<int> fullHeight(*this);
+//        fullHeight.setY(0);
+//        fullHeight.setHeight(firstPoint->maxY);
+//        return isWithinRect(x_in, y_in, fullHeight);
+//    }
     
     void minimizeRect() {
-        int left = 10000;
-        int right = -1;
-        int up = 10000;
-        int down = -1;
-        if(getContainedPoints().size() >= 2) {
-            for(const auto& point : getContainedPoints()) {
+        double left = 10000;
+        double right = -1;
+        double up = 10000;
+        double down = -1;
+        if(getContainedSubPoints().size() >= 2) {
+            for(const auto& point : getContainedSubPoints()) {
                 if(point.getX() < left) {
                     left = point.getX()-1;
                 }
@@ -325,12 +398,28 @@ private:
                 }
             }
             
-            boundaries = {0, 0, static_cast<int>(firstPoint->maxX), static_cast<int>(firstPoint->maxY)};
+            DBUG(("left %f right %f up %f down %f", left, right, up, down));
+            
+            Rectangle<double> fullHeightMarking = {left, 0., right-left, firstPoint->maxY};
             for(const auto& point : getAllPoints()) {
-                if(point.getX() < left && point.getX() > boundaries.getX()) {
+                if(isWithinRect(point.getX(), point.getY(), fullHeightMarking)) {
+                    if(point.getY() > down +1) {
+                        down = point.getY() + 1;
+                        DBUG(("moving down to %i", down));
+                    }
+                    if(point.getY() < up -1) {
+                        up = point.getY() - 1;
+                        DBUG(("moving up to %i", up));
+                    }
+                }
+            }
+            
+            boundaries = {0., 0., firstPoint->maxX, firstPoint->maxY};
+            for(const auto& point : getAllPoints()) {
+                if(point.getX() <= left && point.getX() >= boundaries.getX()) {
                     boundaries.setX(point.getX()-1);
                 }
-                if(point.getX() > right && point.getX() < boundaries.getRight()) {
+                if(point.getX() >= right && point.getX() <= boundaries.getRight()) {
                     boundaries.setRight(point.getX()+1);
                 }
 //                if(point.getY() < up && point.getY() < boundaries.getY()) {
@@ -345,12 +434,89 @@ private:
             setY(up);
             setWidth(right-left);
             setHeight(down-up);
+            
+            findAndAddContainedPoints(true);
         } else {
             DBUG(("Too few points, should be removed"));
         }
     }
     
-    set<SplineOscillatorPoint*> points;
+    class ContainedPoint {
+    public:
+        ContainedPoint(SplineOscillatorPoint* p_in, bool subPoint_in[3]) : p(p_in) {
+            subPoint[0] = subPoint_in[0];
+            subPoint[1] = subPoint_in[1];
+            subPoint[2] = subPoint_in[2];
+        };
+        SplineOscillatorPoint* p = nullptr;
+        bool subPoint[3] = {};
+        
+        double& getX(const int i) {
+            if(i == 0) {
+                return p->x;
+            } else if(i == 1) {
+                return p->controlX;
+            } else if(i == 2) {
+                return p->controlX2;
+            }
+            DBUG(("WARNING: bad index %i", i));
+            static double tmp = 0;
+            return tmp;
+        }
+
+        //"unsafe" setting x without using SplineOscillatorPoints own setX to avoid issues when dragging markings fast
+        void rawSetX(const double x_in, const int i) {
+            if(i == 0) {
+                p->x = x_in;
+            } else if(i == 1) {
+                p->controlX = x_in;
+            } else if(i == 2) {
+                p->controlX2 = x_in;
+            } else {
+                DBUG(("WARNING: bad index %i", i));
+            }
+        }
+
+        //"unsafe" setting x without using SplineOscillatorPoints own setX to avoid issues when dragging markings fast
+        void rawSetY(const double y_in, const int i) {
+            if(i == 0) {
+                p->y = y_in;
+            } else if(i == 1) {
+                p->controlY = y_in;
+            } else if(i == 2) {
+                p->controlY2 = y_in;
+            } else {
+                DBUG(("WARNING: bad index %i", i));
+            }
+        }
+        
+        double& getY(const int i) {
+            if(i == 0) {
+                return p->y;
+            } else if(i == 1) {
+                return p->controlY;
+            } else if(i == 2) {
+                return p->controlY2;
+            }
+            DBUG(("WARNING: bad index %i", i));
+            static double tmp = 0;
+            return tmp;
+        }
+        
+        const Point<double> getPoint(const int i) const {
+            if(i == 0) {
+                return {static_cast<double>(p->x), static_cast<double>(p->y)};
+            } else if(i == 1) {
+                return {static_cast<double>(p->controlX), static_cast<double>(p->controlY)};
+            } else if(i == 2) {
+                return {static_cast<double>(p->controlX2), static_cast<double>(p->controlY2)};
+            }
+            DBUG(("WARNING: bad point nr %i", i));
+            return Point<double>(0, 0);
+        }
+    };
+
+    vector<ContainedPoint> containedPoints;
 };
 
 static SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type);
@@ -379,7 +545,9 @@ SplineOscillatorEditor::SplineOscillatorEditor(String name, EventAggregator* eve
     global_pointPopupMenuData.point = 0;
     global_pointPopupMenuData.firstPoint = 0;
     global_pointPopupMenuData.subPoint = 0;
-  
+    
+    setWantsKeyboardFocus(true);
+    
     setBufferedToImage(true);
 //    timerPoint = 0;
 }
@@ -627,12 +795,11 @@ void SplineOscillatorEditor::mouseDown(const MouseEvent& event) {
                 DBUG(("handleWasHit %i", handleWasHit));
                 if(!handleWasHit) {
                     squareMarking.reset();
-                    squareMarking = make_shared<SquareMarking>(event.x, event.y);
-                    
+                    squareMarking = make_shared<SquareMarking>(event.x, event.y, firstPoint);
                 }
             } else {
                 squareMarking.reset();
-                squareMarking = make_shared<SquareMarking>(event.x, event.y);
+                squareMarking = make_shared<SquareMarking>(event.x, event.y, firstPoint);
             }
         }
     }
@@ -643,6 +810,15 @@ void SplineOscillatorEditor::mouseDown(const MouseEvent& event) {
 void SplineOscillatorEditor::mouseDoubleClick (const MouseEvent& event) {
     //juce only register double clicks if in the same pixel so no need to save old clicks.
     DBUG(("doubleclick (%i, %i)", event.x, event.y ));
+    
+    if(squareMarking && squareMarking->isBeingDragged()){
+        if(isWithinRect(event.x, event.y, *squareMarking.get())) {
+            DBUG(("double click in rect, ignore"));
+        } else {
+            DBUG(("double click outside marking, remove it"));
+            squareMarking.reset();
+        }
+    }
     
     bool hit = false;
     int subPointHit = 0;
@@ -678,6 +854,20 @@ void SplineOscillatorEditor::mouseDoubleClick (const MouseEvent& event) {
     } else {
         DBUG(("WARNING: firstPoint is null"));
     }
+}
+
+bool SplineOscillatorEditor::keyPressed (const KeyPress& key) {
+    const ScopedLock sml(squareMarkingLock);
+    if(key.getKeyCode() == key.backspaceKey || key.getKeyCode() == key.deleteKey) {
+        if(squareMarking && !squareMarking->isBeingDragged() && !squareMarking->isBeingHandleDragged()) {
+            squareMarking->removeMarkedPoints();
+            squareMarking.reset();
+        }
+        return true;
+    } else {
+        DBUG(("unknown key %i", key.getKeyCode()));
+    }
+    return false;
 }
 
 void SplineOscillatorEditor::makeNewPointAt(const MouseEvent& event) {
@@ -804,7 +994,7 @@ void SplineOscillatorEditor::mouseDrag (const MouseEvent& event) {
         return;
     }
     
-    if(squareMarking && squareMarking->isBeingDragged() && isWithinRect(event.x, event.y, *squareMarking.get())) {
+    if(squareMarking && squareMarking->isBeingDragged()) {
         squareMarking->drag(event.x, event.y);
         repaint();
     } else {
@@ -859,7 +1049,7 @@ void SplineOscillatorEditor::mouseDrag (const MouseEvent& event) {
                 ScopedLock sml(squareMarkingLock);
                 if(squareMarking && squareMarking->initialMarking) {
                     squareMarking->updateMarking(event.x, event.y);
-                    squareMarking->findAndAddContainedPoints(firstPoint);
+                    squareMarking->findAndAddContainedPoints();
                     repaint();
                 }
                 if(squareMarking && squareMarking->isBeingHandleDragged()) {
@@ -912,7 +1102,7 @@ void SplineOscillatorEditor::mouseUp (const MouseEvent& event) {
     ScopedLock sml(squareMarkingLock);
     if(squareMarking) {
         squareMarking->mouseUp();
-        if(squareMarking->getContainedPoints().size() < 2) {
+        if(squareMarking->getContainedSubPoints().size() < 2) {
             squareMarking.reset();
         }
     }
@@ -967,6 +1157,7 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         g.fillRect(0, 0, getWidth(), getHeight());
     }
    
+    //For when dragging other stuff over editor like presets
     if(draggedOver) {
         if(dragBlink) {
             Colour bgColour((uint8)255, (uint8)255, (uint8)255, (uint8)(8));
@@ -1042,7 +1233,7 @@ void SplineOscillatorEditor::paint(Graphics& g) {
     SplineOscillatorPoint* markedPoints[2] = {nullptr, nullptr};
     
     while(point) {
-        if(point->overAnyPoint()) {
+        if(point->overAnyPoint() && !squareMarking) {
             if(point->overPoint) {
                 if(point->isFirstPoint() || point->isLastPoint()) {
                     markedPoints[0] = point->getFirstPoint()->nextPoint;
@@ -1114,11 +1305,11 @@ void SplineOscillatorEditor::paint(Graphics& g) {
     const ScopedLock sml(squareMarkingLock);
     if(squareMarking) {
         g.setColour(getColors()->color1.withAlpha((uint8)64));
-        g.fillRect(*squareMarking.get());
+        g.fillRect(squareMarking->toFloat());
         g.setColour(getColors()->color3.withAlpha((uint8)128));
-        g.drawRect(*squareMarking.get(), 1);
+        g.drawRect(squareMarking->toFloat(), 1);
         
-        for(const auto& p : squareMarking->getContainedPoints()) {
+        for(const auto& p : squareMarking->getContainedSubPoints()) {
             g.setColour(getColors()->color3.withAlpha((uint8)96));
             g.drawEllipse(p.x-7, p.y-7, 14, 14, 1);
             g.setColour(getColors()->color2.withAlpha((uint8)256));
@@ -1132,12 +1323,19 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         }
         
         if(!squareMarking->initialMarking) {
-            for(const Rectangle<int>& rect : squareMarking->getHandles()) {
+            for(const Rectangle<double>& rect : squareMarking->getHandles()) {
                 g.setColour(getColors()->color2.withAlpha((uint8)196));
-                g.fillRect(rect);
+                g.fillRect(rect.toFloat());
                 g.setColour(getColors()->color3);
-                g.drawRect(rect, 1);
+                g.drawRect(rect.toFloat(), 1);
             }
+            
+            const float dashes [] = {5.f, 5.f};
+            g.setColour(getColors()->color12);
+            g.drawDashedLine ({squareMarking->boundaries.getTopLeft().toFloat(), squareMarking->boundaries.getTopRight().toFloat()}, dashes, 2);
+            g.drawDashedLine ({squareMarking->boundaries.getTopLeft().toFloat(), squareMarking->boundaries.getBottomLeft().toFloat()}, dashes, 2);
+            g.drawDashedLine ({squareMarking->boundaries.getBottomLeft().toFloat(), squareMarking->boundaries.getBottomRight().toFloat()}, dashes, 2);
+            g.drawDashedLine ({squareMarking->boundaries.getTopRight().toFloat(), squareMarking->boundaries.getBottomRight().toFloat()}, dashes, 2);
         }
     }
 }
@@ -2827,7 +3025,15 @@ double SplineOscillatorPoint::getGridLockedY(double y_in) {
     return nrOfFractions*fraction;
 }
 
-void SplineOscillatorPoint::setY(double y_in) {
+void SplineOscillatorPoint::setY(double y_in, const int subPoint) {
+    if(subPoint == 1) {
+        setControlY(y_in);
+        return;
+    } else if(subPoint == 2) {
+        setControlY2(y_in);
+        return;
+    }
+    
     if(y_in >= 0 && y_in <= maxY) {
 
         if(splineEditorGridLocked) {
@@ -2859,7 +3065,18 @@ void SplineOscillatorPoint::setY(double y_in) {
     }
 }
 
-void SplineOscillatorPoint::setX(double x_in) {
+void SplineOscillatorPoint::setX(double x_in, const int subPoint) {
+    if(subPoint == 1) {
+        setControlX(x_in);
+        return;
+    } else if(subPoint == 2) {
+        setControlX2(x_in);
+        return;
+    } else if(subPoint > 2) {
+        DBUG(("WARNING: bad subPoint %i", subPoint));
+        return;
+    }
+    
     DBUG(("setX %f %f - pointNr %i", x_in, controlX, this->pointNr));
     if(splineEditorGridLocked) {
         x_in = getGridLockedX(x_in);
@@ -2906,7 +3123,6 @@ void SplineOscillatorPoint::setX(double x_in) {
                 }
             }
         }
-        
     }
 
     if(type == CUBIC) {
@@ -3178,7 +3394,7 @@ void SplineOscillatorPoint::updateValuesFromParams() {
 }
 
 void SplineOscillatorPoint::updateParamsValues() {
-    DBUG(("pointNr %i", pointNr));
+//    DBUG(("pointNr %i", pointNr));
     sanityCheckAndFixPoints();
     //DBUG(("pointNr %i", pointNr));
     if(!params) {

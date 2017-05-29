@@ -267,6 +267,10 @@ void GuDaTextMultiButton::paint (Graphics& g) {
         if(addNumberToButtons) {
             txt = to_string(i+1) + "\n\n" + txt;
         }
+        if(showEnabled) {
+            x += getHeight();
+            w -= getHeight();
+        }
         g.drawFittedText (txt,
                           x, 1, w, getHeight()-2,
                           Justification::centred, 1);
