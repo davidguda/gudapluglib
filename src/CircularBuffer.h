@@ -25,7 +25,8 @@ template<class T> void inline addToCircularBuffer(T* circularBuffer, const T* co
     bufferPosition = (bufferPosition + numSamples) % bufferSize;
     useableSamples += numSamples;
     if(useableSamples > bufferSize) {
-        DBUG(("WARNING: useableSamples %i is bigger than bufferSize %i", useableSamples, bufferSize));
+        DBUG(("WARNING: useableSamples %i is bigger than bufferSize %i, sets to numSamples", useableSamples, numSamples));
+        useableSamples = numSamples;
     }
 }
 
@@ -45,7 +46,7 @@ template<class T> void inline consumeFromCircularBuffer(const T* circularBuffer,
 }
 
 //In practice just float and double since addToCircularBuffer use FloatVectorOperations
-template<class T, int bufferSize> class CircularBuffer
+template<class T, const int bufferSize> class CircularBuffer
 {
 public:
     CircularBuffer() {}
@@ -60,6 +61,21 @@ public:
     
     const bool canConsume(const int numSamples) const {
         return numSamples <= useableSamples;
+    }
+    
+    const int getUseableSamples() const {return useableSamples;}
+    
+    void resetIfTooManyUseable() {
+        if(useableSamples >= bufferSize) {
+            DBUG(("resets to 0, should never have to"));
+            reset();
+        }
+    }
+    
+    void reset() {
+        useableSamples = 0;
+        firstFreePosition = 0;
+        bufferPosition = 0;
     }
     
 protected:

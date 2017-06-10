@@ -70,6 +70,7 @@ public:
     SplineOscillatorPoint* addRandomPointAfterThis(SplinePointType type);
     
     void deletePoint(int subPoint);
+    void deleteOrUpgradePoint(const int subPoint, const double x_in, const double y_in);
     
     int nrOfPoints();
     
@@ -184,6 +185,9 @@ private:
     double* params;
     JUCE_LEAK_DETECTOR (SplineOscillatorPoint)
 };
+
+extern SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type);
+
 
 class UpdateParamsFromPointsTimer : public Timer
 {

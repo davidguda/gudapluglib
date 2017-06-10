@@ -41,24 +41,20 @@ const bool rectWithinRect(const Rectangle<double>& outerRect, const Rectangle<do
     return true;
 }
 
-template<class F, class R> void scaleXY(F& x, F& y, const Rectangle<R>& oldRect, const Rectangle<R>& newRect) {
-    DBUG(("before after scale x %f y %f", x, y));
-    const long double fromLeft = x - oldRect.getX();
-    const long double xFactor = fromLeft / (long double)oldRect.getWidth();
-    x = newRect.getX() + (xFactor * (long double)newRect.getWidth());
-    const long double fromTop = y - oldRect.getY();
-    const long double yFactor = fromTop / (long double)oldRect.getHeight();
-    y = newRect.getY() + (yFactor * (long double)newRect.getHeight());
+void scaleXY(double& x, double& y, const Rectangle<double>& oldRect, const Rectangle<double>& newRect) {
+    const double fromLeft = x - oldRect.getX();
+    const double xFactor = fromLeft / (double)oldRect.getWidth();
+    x = newRect.getX() + (xFactor * (double)newRect.getWidth());
+    const double fromTop = y - oldRect.getY();
+    const double yFactor = fromTop / (double)oldRect.getHeight();
+    y = newRect.getY() + (yFactor * (double)newRect.getHeight());
 
-    if(xFactor > 1.01) {
-        DBUG(("too big xfactor %f", xFactor));
+    if(xFactor > 1.001) {
+        DBUG(("WARNING: too big xfactor %f", xFactor));
     }
-    if(xFactor < -0.01) {
-        DBUG(("too small xfactor %f", xFactor));
+    if(xFactor < -0.001) {
+        DBUG(("WARNING: too small xfactor %f", xFactor));
     }
-    
-    DBUG(("after scale x %f y %f", x, y));
-    DBUG(("newRect %f %f %f %f", newRect.getX(), newRect.getY(), newRect.getWidth(), newRect.getHeight()));
 }
 
 CriticalSection squareMarkingLock;
@@ -112,7 +108,6 @@ public:
         } else {
             DBUG(("WARNING: bad firstPoint %p", firstPoint));
         }
-//        DBUG(("getContainedPoints().size() %i", getContainedPoints().size()));
     }
     
     const vector<Point<double>> getAllPoints() {
@@ -159,13 +154,7 @@ public:
                 if(p.subPoint[i]) {
                     double x = p.getX(i);
                     double y = p.getY(i);
-                    if(x < originalMarking.getX()) {
-                        DBUG(("x %f, origMark x %f - containedPointNr %i", x, originalMarking.getX(), containedPointNr));
-                    }
-//                    scaleXY(p.getX(i), p.getY(i), originalMarking, newMarking);
-                    DBUG(("before scale x %f y%f - containedPointNr %i - subPoint %i", x, y, containedPointNr, i))
                     scaleXY(x, y, originalMarking, newMarking);
-                    DBUG(("after scale x %f y%f - containedPointNr %i - subPoint %i", x, y, containedPointNr, i))
                     p.rawSetX(x, i);
                     p.rawSetY(y, i);
                 }
@@ -173,7 +162,7 @@ public:
             containedPointNr++;
         }
 
-        //Just a safety round to make sure values are sane.
+        //Just a safety round to make sure values are sane. Should not be needed
         for(auto& p : containedPoints) {
             for(int i = 0 ; i < 3 ; i++) {
                 if(p.subPoint[i]) {
@@ -234,13 +223,11 @@ public:
         
         if(handleDragged == upLeft || handleDragged == upRight) {
             if(y_in > getBottom() - handleSize) {
-                DBUG(("too narrow"));
                 return;
             }
             newMarking.setTop(y_in);
         } else {
             if(y_in < getY() + handleSize) {
-                DBUG(("too narrow"));
                 return;
             }
             newMarking.setBottom(y_in);
@@ -248,13 +235,11 @@ public:
         
         if(handleDragged == upLeft || handleDragged == downLeft) {
             if(x_in > getRight() - handleSize) {
-                DBUG(("too narrow"));
                 return;
             }
             newMarking.setLeft(x_in);
         } else {
             if(x_in < getX() + handleSize) {
-                DBUG(("too narrow"));
                 return;
             }
             newMarking.setRight(x_in);
@@ -278,9 +263,6 @@ public:
     
     //Dragging of main "body"
     void drag(const double x_in, const double y_in) {
-        DBUG(("\n\n\nDRAGSTART"));
-        double startX = containedPoints[0].p->x;
-
         const Rectangle<double> originalMarking(*this);
         Rectangle<double> newMarking(*this);
         if(beingDragged) {
@@ -289,7 +271,6 @@ public:
 
             setBetween(offsetX, boundaries.getX(), boundaries.getRight() - newMarking.getWidth());
             setBetween(offsetY, boundaries.getY(), boundaries.getBottom() - newMarking.getHeight());
-            DBUG(("offsetX %f", offsetX));
             newMarking.setX(offsetX);
             newMarking.setY(offsetY);
         } else {
@@ -306,24 +287,12 @@ public:
                 newMarking.setX(firstPoint->maxX - newMarking.getWidth());
             }
         }
-        
-        double dragDistanceX = newMarking.getX() - originalMarking.getX();
-        DBUG(("getContainedPoints().size() %i, dragdistande x %f, dragdistance y %f, startX %f", getContainedSubPoints().size(), dragDistanceX, newMarking.getY() - originalMarking.getY(), startX));
-        
+
         if(rectWithinRect(boundaries, newMarking)) {
             scalePoints(originalMarking, newMarking);
             setBounds(newMarking.getX(), newMarking.getY(), newMarking.getWidth(), newMarking.getHeight());
         } else {
             DBUG(("outside boundaries boundaries x %f y %f - newMarking.getX() %f newMarking.getY() %f", boundaries.getX(), boundaries.getY(), newMarking.getX(), newMarking.getY()));
-        }
-        
-        double endX = containedPoints[0].p->x;
-        double movement = fabs(startX-endX);
-        if(movement > fabs(dragDistanceX) + 0.001) {
-            DBUG(("WARNING: point has moved more than dragDistance, dragDistanceX %f, startX %f, endX %f, movement %f", dragDistanceX, startX, endX, movement));
-        }
-        if(endX + 0.001 < newMarking.getX()) {
-            DBUG(("WARNING: point is left of new marking"));
         }
     }
     
@@ -366,17 +335,6 @@ private:
         return overSubPoints[0] || overSubPoints[1] || overSubPoints[2];
     }
     
-//    const bool isWithinLeftAndRight(const int x_in, const int y_in) const {
-//        if(!firstPoint) {
-//            DBUG(("WARNING: no firstPoint"));
-//            return false;
-//        }
-//        Rectangle<int> fullHeight(*this);
-//        fullHeight.setY(0);
-//        fullHeight.setHeight(firstPoint->maxY);
-//        return isWithinRect(x_in, y_in, fullHeight);
-//    }
-    
     void minimizeRect() {
         double left = 10000;
         double right = -1;
@@ -397,8 +355,6 @@ private:
                     down = point.getY()+1;
                 }
             }
-            
-            DBUG(("left %f right %f up %f down %f", left, right, up, down));
             
             Rectangle<double> fullHeightMarking = {left, 0., right-left, firstPoint->maxY};
             for(const auto& point : getAllPoints()) {
@@ -519,7 +475,7 @@ private:
     vector<ContainedPoint> containedPoints;
 };
 
-static SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type);
+//static SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type);
 
 struct PointPopupMenuData {
     int pointNr=0;
@@ -841,7 +797,8 @@ void SplineOscillatorEditor::mouseDoubleClick (const MouseEvent& event) {
     }
     
     if(hit && point) {
-        point->deletePoint(subPointHit);
+        //point->deletePoint(subPointHit);
+        point->deleteOrUpgradePoint(subPointHit, event.x, event.y);
         repaint();
         return;//Important to return here since a point may potentially delete itself from memory.
     } else {
@@ -1346,7 +1303,7 @@ void setSourceSelfNoteIfNotSourceSelf(ModulationPoint* mp) {
     }
 }
 
-static SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type) {
+SplineOscillatorPoint* AddSplinePointAfterPoint(SplineOscillatorPoint* point, SplinePointType type) {
     DBUG(("type %i", (int)type));
     
     SplineOscillatorPoint* newPoint = point->addRandomPointAfterThis(type);
@@ -2236,23 +2193,30 @@ void SplineOscillatorPoint::deletePoint(int subPoint) {
             modulationPoint[2].status = NO_MODULATION;
         }
     } else if(type == QUADRATIC) {
-        if(previousPoint && getNext() && getNext()->type == QUADRATIC && subPoint == 0) {
-            getNext()->controlX2 = getNext()->controlX;
-            getNext()->controlY2 = getNext()->controlY;
-            getNext()->controlX = controlX;
-            getNext()->controlY = controlY;
-            getNext()->type = CUBIC;
-            previousPoint->setNextPoint(getNext());
-            getNext()->previousPoint = previousPoint;
-            markedForDeletion = true;
-        } else {
-            if(subPoint == 0) {
-                type = LINEAR;
+        if(previousPoint && getNext() && subPoint == 0) {
+            if(getNext()->type == QUADRATIC) {
+                getNext()->controlX2 = getNext()->controlX;
+                getNext()->controlY2 = getNext()->controlY;
+                getNext()->controlX = controlX;
+                getNext()->controlY = controlY;
+                getNext()->type = CUBIC;
+                previousPoint->setNextPoint(getNext());
+                getNext()->previousPoint = previousPoint;
+                markedForDeletion = true;
+            } else if(getNext()->type == LINEAR) {
+                getNext()->controlX = controlX;
+                getNext()->controlY = controlY;
+                getNext()->type = QUADRATIC;
+                previousPoint->setNextPoint(getNext());
+                getNext()->previousPoint = previousPoint;
+                markedForDeletion = true;
+            } else if(getNext()->type == CUBIC) {
                 x = controlX;
                 y = controlY;
-            } else if(subPoint == 1) {
                 type = LINEAR;
             }
+        } else if(subPoint == 1) {
+            type = LINEAR;
         }
         modulationPoint[1].status = NO_MODULATION;
         modulationPoint[2].status = NO_MODULATION;
@@ -2297,6 +2261,39 @@ void SplineOscillatorPoint::deletePoint(int subPoint) {
         suicide();
     }
 }
+
+void SplineOscillatorPoint::deleteOrUpgradePoint(const int subPoint, const double x_in, const double y_in) {
+    getFirstPoint()->resetSelectedAllPoints();
+    resetOver();
+    if(subPoint == 0 || isFirstPoint()) {
+        deletePoint(subPoint);
+        return;
+    } else {
+        if(previousPoint) {
+            if(subPoint == 1) {
+                deletePoint(subPoint);
+                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(previousPoint, SplinePointType::LINEAR);
+                newPoint->setX(x_in);
+                newPoint->setY(y_in);
+            } else if (subPoint == 2 && type == SplinePointType::CUBIC) {
+                double tmpX = controlX;
+                double tmpY = controlY;
+                double tmpX2 = controlX2;
+                double tmpY2 = controlY2;
+                
+                type = SplinePointType::LINEAR;
+                SplineOscillatorPoint* newPoint = AddSplinePointAfterPoint(previousPoint, SplinePointType::QUADRATIC);
+                newPoint->setX(tmpX2);
+                newPoint->setY(tmpY2);
+                newPoint->setX(tmpX, 1);
+                newPoint->setY(tmpY, 1);
+            }
+        } else {
+            DBUG(("WARNING: no previousPoint"));
+        }
+    }
+}
+
 
 void SplineOscillatorPoint::debugPoints() {
 #ifdef DEBUG_BUILD
@@ -3077,7 +3074,6 @@ void SplineOscillatorPoint::setX(double x_in, const int subPoint) {
         return;
     }
     
-    DBUG(("setX %f %f - pointNr %i", x_in, controlX, this->pointNr));
     if(splineEditorGridLocked) {
         x_in = getGridLockedX(x_in);
     }
@@ -3151,8 +3147,6 @@ void SplineOscillatorPoint::setX(double x_in, const int subPoint) {
 }
 
 void SplineOscillatorPoint::setControlX(double x_in) {
-    DBUG(("x_in %f", x_in));
-    
     if(splineEditorGridLocked) {
         x_in = getGridLockedX(x_in);
     }

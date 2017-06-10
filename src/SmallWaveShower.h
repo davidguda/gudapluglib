@@ -33,7 +33,7 @@ protected:
     bool cosFadeOutVolume = false;
     
 private:
-    CriticalSection& sharedLock; // a lock not owner by this component but by a shared resource to avoid painting while updating buffers etc.
+    CriticalSection& sharedLock; // a lock not owned by this component but by a shared resource to avoid painting while updating buffers etc.
     inline const float getSound(const float* sound, int position, float samplesPerPixel) const;
     const float* getSoundPointerInternal();
 

@@ -350,12 +350,19 @@ template <class F> extern inline void setBetween(F& input, const F& lower, const
 }
 
 template <class F>
-extern inline void setMax(F& input, F higher) {
+extern inline void setMax(F& input, const F higher) {
     if(input > higher)
     	input=higher;
 }
 
-extern inline void setMin(double& input, double lower) {
+template <class F>
+extern inline const F returnMax(const F input, const F higher) {
+    if(input > higher)
+        return higher;
+    return input;
+}
+
+extern inline void setMin(double& input, const double lower) {
     if(input < lower)
     	input=lower;
 }
