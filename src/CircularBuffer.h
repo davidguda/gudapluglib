@@ -78,11 +78,18 @@ public:
         bufferPosition = 0;
     }
     
+    void setLastWasSilent(const bool silent) {
+        lastWasSilent = silent;
+    }
+    
+    const bool getLastWasSilent() const {return lastWasSilent;}
+    
 protected:
     T buffer[bufferSize] = {};
     int bufferPosition = 0;
     int useableSamples = 0;
     int firstFreePosition = 0;
+    bool lastWasSilent = false;
 };
 
 

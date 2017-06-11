@@ -60,7 +60,10 @@ public:
         }
     };
     
+    void setActive(bool active_in) {active = active_in;}
+    
 private:
+    bool active = true;
     bool isUsingCircularBuffer = false;
     bool shouldCycleReset = false;
     bool shouldResetCircularBuffers = false;
@@ -79,6 +82,7 @@ private:
     function<float(void)> getPos;
     float previousY[2] = {};
     Image image; //Better name? It is not a background
+    uint8 lineAlpha = 255;//fade to transparant when silent audio
 };
 
 

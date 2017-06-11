@@ -68,77 +68,100 @@ void BigWaveShower::paint(Graphics& g) {
         shouldClearImage = false;
     }
     
-    const float fPos = getPos();
+    vector<const Path> paths[2];
     const int nrOfChannels = 2;//TODO: don't hardcode to stereo
     Graphics imageGraphics(image);
-    vector<const Path> paths[2];
-    for(int channel = 0 ; channel < nrOfChannels ; channel++) {
-        if(fPos != lastfPos[channel]) {
-            const int clearX = (int)(lastfPos[channel] * (float)getWidth());
-            const int clearX2 = (int)(fPos * (float)getWidth());
-            const int clearW = clearX2 - clearX;
-            
-            if(clearW > 0) {
-                image.clear(Rectangle<int>(clearX, 0, clearW, getHeight()), Colours::transparentBlack);
-            } else {
-                image.clear(Rectangle<int>(clearX, 0, getWidth()-clearX, getHeight()), Colours::transparentBlack);
-                image.clear(Rectangle<int>(0, 0, clearX2, getHeight()), Colours::transparentBlack);
-            }
-            
-            try {
-                isUsingCircularBuffer = true;
-                circularBuffer[channel].resetIfTooManyUseable();
-                float sound[8192] = {};
-                const int bufUseableSamples = circularBuffer[channel].getUseableSamples();
-                if(bufUseableSamples > 8192) {
-                    DBUG(("WARNING: too much buffer left, should avoid this scenario, bufUseableSamples %i", bufUseableSamples));
-                }
-                const int useableSamples = returnMax(bufUseableSamples, 8192);
 
-                circularBuffer[channel].consumeToBuffer(sound, useableSamples);
-                isUsingCircularBuffer = false;
+    bool lastWasSilence = true;
+    
+    if(active) {
+        for(int channel = 0 ; channel < nrOfChannels ; channel++) {
+            lastWasSilence &= circularBuffer[channel].getLastWasSilent();
+        }
+    }
+
+    if(lastWasSilence) {
+        if(lineAlpha > 64) {
+            lineAlpha -= 3;
+        } else if(lineAlpha > 0) {
+            lineAlpha--;
+        }
+    } else {
+        lineAlpha = 255;
+    }
+    
+    if(active && lineAlpha > 0) {
+        const float fPos = getPos(); //cache up instead of using locks
+        
+        for(int channel = 0 ; channel < nrOfChannels ; channel++) {
+            if(fPos != lastfPos[channel]) {
+                const int clearX = (int)(lastfPos[channel] * (float)getWidth());
+                const int clearX2 = (int)(fPos * (float)getWidth());
+                const int clearW = clearX2 - clearX;
                 
-                if(lastfPos[channel] > fPos) {
-                    const float toEnd = 1.f - lastfPos[channel];
-                    const float fromStart = fPos;
-                    const float total = toEnd + fromStart;
-                    const float firstFactor = toEnd / total;
-                    const int samplesToEnd = useableSamples * firstFactor;
+                if(clearW > 0) {
+                    image.clear(Rectangle<int>(clearX, 0, clearW, getHeight()), Colours::transparentBlack);
+                } else {
+                    image.clear(Rectangle<int>(clearX, 0, getWidth()-clearX, getHeight()), Colours::transparentBlack);
+                    image.clear(Rectangle<int>(0, 0, clearX2, getHeight()), Colours::transparentBlack);
+                }
+                
+                try {
+                    isUsingCircularBuffer = true;
+                    circularBuffer[channel].resetIfTooManyUseable();
+                    float sound[8192] = {};
+                    const int bufUseableSamples = circularBuffer[channel].getUseableSamples();
+                    if(bufUseableSamples > 8192) {
+                        DBUG(("WARNING: too much buffer left, should avoid this scenario, bufUseableSamples %i", bufUseableSamples));
+                    }
+                    const int useableSamples = returnMax(bufUseableSamples, 8192);
                     
-                    const int fromX = lastfPos[channel]*getWidth();
-                    const int toX = fPos*getWidth();
+                    circularBuffer[channel].consumeToBuffer(sound, useableSamples);
+                    isUsingCircularBuffer = false;
                     
-                    if(toX == 0) { //Special case where it just barely wraps around.
-                        paths[channel].push_back(makePath(fromX, getWidth(), sound, useableSamples, channel));
+                    if(lastfPos[channel] > fPos) {
+                        const float toEnd = 1.f - lastfPos[channel];
+                        const float fromStart = fPos;
+                        const float total = toEnd + fromStart;
+                        const float firstFactor = toEnd / total;
+                        const int samplesToEnd = useableSamples * firstFactor;
+                        
+                        const int fromX = lastfPos[channel]*getWidth();
+                        const int toX = fPos*getWidth();
+                        
+                        if(toX == 0) { //Special case where it just barely wraps around.
+                            paths[channel].push_back(makePath(fromX, getWidth(), sound, useableSamples, channel));
+                        } else {
+                            paths[channel].push_back(makePath(fromX, getWidth(), sound, samplesToEnd, channel));
+                            paths[channel].push_back(makePath(0, toX, &sound[samplesToEnd], useableSamples-samplesToEnd, channel));
+                        }
+                        
+                        lastfPos[channel] = 0;
                     } else {
-                        paths[channel].push_back(makePath(fromX, getWidth(), sound, samplesToEnd, channel));
-                        paths[channel].push_back(makePath(0, toX, &sound[samplesToEnd], useableSamples-samplesToEnd, channel));
+                        const int fromX = lastfPos[channel]*getWidth();
+                        const int toX = fPos*getWidth();
+                        
+                        paths[channel].push_back(makePath(fromX, toX, sound, useableSamples, channel));
                     }
                     
-                    lastfPos[channel] = 0;
-                } else {
-                    const int fromX = lastfPos[channel]*getWidth();
-                    const int toX = fPos*getWidth();
-                    
-                    paths[channel].push_back(makePath(fromX, toX, sound, useableSamples, channel));
+                    lastfPos[channel] = fPos;
+                } catch (std::bad_alloc err) {
+                    DBUG(("WARNING, err %s", err.what()));
+                    repaint();
+                    return;
                 }
-                
-                lastfPos[channel] = fPos;
-            } catch (std::bad_alloc err) {
-                DBUG(("WARNING, err %s", err.what()));
-                repaint();
-                return;
             }
         }
     }
     
-    const Colour colors[] = {Colour(uint8(100), uint8(180), uint8(160), uint8(255)),
-                             Colour(uint8(200), uint8(120), uint8(100), uint8(255))};
-    
-    for(int channel = 0 ; channel < nrOfChannels ; channel++) {
-        imageGraphics.setColour(colors[channel]);
-        for(auto& path : paths[channel]) {
-            imageGraphics.strokePath (path, PathStrokeType(1));
+    const Colour colors[] = {Colour(uint8(100), uint8(180), uint8(160), lineAlpha),
+                             Colour(uint8(200), uint8(120), uint8(100), lineAlpha)};
+    if(lineAlpha > 0) {
+        for(int channel = 0 ; channel < nrOfChannels ; channel++) {
+            imageGraphics.setColour(colors[channel]);
+            for(auto& path : paths[channel]) {
+                imageGraphics.strokePath (path, PathStrokeType(1));
+            }
         }
     }
     
