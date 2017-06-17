@@ -25,7 +25,8 @@
 #include "windowshacks.h"
 //#include "PluginProcessor.h"
 
-const bool isWithinRect(const double x_in, const double y_in, const Rectangle<double>& rect) {
+//In windows just using Rectangle is ambigous so need to use juce::Rectangle
+const bool isWithinRect(const double x_in, const double y_in, const juce::Rectangle<double>& rect) {
     if(x_in < rect.getX()) return false;
     if(y_in < rect.getY()) return false;
     if(x_in > rect.getRight()) return false;
@@ -33,7 +34,7 @@ const bool isWithinRect(const double x_in, const double y_in, const Rectangle<do
     return true;
 }
 
-const bool rectWithinRect(const Rectangle<double>& outerRect, const Rectangle<double>& innerRect) {
+const bool rectWithinRect(const juce::Rectangle<double>& outerRect, const juce::Rectangle<double>& innerRect) {
     if(innerRect.getX() < outerRect.getX()) return false;
     if(innerRect.getRight() > outerRect.getRight()) return false;
     if(innerRect.getY() < outerRect.getY()) return false;
@@ -41,7 +42,7 @@ const bool rectWithinRect(const Rectangle<double>& outerRect, const Rectangle<do
     return true;
 }
 
-void scaleXY(double& x, double& y, const Rectangle<double>& oldRect, const Rectangle<double>& newRect) {
+void scaleXY(double& x, double& y, const juce::Rectangle<double>& oldRect, const juce::Rectangle<double>& newRect) {
     const double fromLeft = x - oldRect.getX();
     const double xFactor = fromLeft / (double)oldRect.getWidth();
     x = newRect.getX() + (xFactor * (double)newRect.getWidth());
@@ -58,10 +59,10 @@ void scaleXY(double& x, double& y, const Rectangle<double>& oldRect, const Recta
 }
 
 CriticalSection squareMarkingLock;
-class SquareMarking : public Rectangle<double>
+class SquareMarking : public juce::Rectangle<double>
 {
 public:
-    static const int handleSize = 15;
+    constexpr static const double handleSize = 15;
     SquareMarking(const int x_in, const int y_in, SplineOscillatorPoint* firstPoint_in) : firstPoint(firstPoint_in) {
         if(!okPointer(firstPoint)) {
             DBUG(("bad firstPoint %p", firstPoint));
@@ -93,7 +94,7 @@ public:
         containedPoints.clear();
         if(okPointer(firstPoint)) {
             SplineOscillatorPoint* p = firstPoint;
-            Rectangle<double> clipRect(*this);
+            juce::Rectangle<double> clipRect(*this);
             if(fullHeight) {
                 clipRect.setY(0);
                 clipRect.setHeight(firstPoint->maxY);
@@ -147,7 +148,7 @@ public:
         return points;
     }
     
-    void scalePoints(const Rectangle<double>& originalMarking, const Rectangle<double>& newMarking) {
+    void scalePoints(const juce::Rectangle<double>& originalMarking, const juce::Rectangle<double>& newMarking) {
         int containedPointNr = 0;
         for(auto& p : containedPoints) {
             for(int i = 0 ; i < 3 ; i++) {
@@ -186,7 +187,7 @@ public:
     const bool isBeingHandleDragged() {return beingHandleDragged;}
     const bool isBeingDragged() {return beingDragged;}
     
-    const vector<Rectangle<double>> getHandles() {
+    const vector<juce::Rectangle<double>> getHandles() {
         return {
             {getX()-handleSize, getY()-handleSize, handleSize, handleSize},
             {getRight(), getY()-handleSize, handleSize, handleSize},
@@ -215,8 +216,8 @@ public:
             return;
         }
         
-        Rectangle<double> originalMarking(*this);
-        Rectangle<double> newMarking(*this);
+        juce::Rectangle<double> originalMarking(*this);
+        juce::Rectangle<double> newMarking(*this);
 
         setBetween(x_in, boundaries.getX(), boundaries.getRight());
         setBetween(y_in, boundaries.getY(), boundaries.getBottom());
@@ -263,8 +264,8 @@ public:
     
     //Dragging of main "body"
     void drag(const double x_in, const double y_in) {
-        const Rectangle<double> originalMarking(*this);
-        Rectangle<double> newMarking(*this);
+        const juce::Rectangle<double> originalMarking(*this);
+        juce::Rectangle<double> newMarking(*this);
         if(beingDragged) {
             double offsetX = x_in - dragOffset.getX();
             double offsetY = y_in - dragOffset.getY();
@@ -311,7 +312,7 @@ public:
         }
     }
     
-    Rectangle<double> boundaries;
+    juce::Rectangle<double> boundaries;
 
 private:
     Point<double> initialMarkingPoint;//used during initial marking to remember where first started dragging
@@ -322,7 +323,7 @@ private:
     enum Handle {upLeft, upRight, downLeft, downRight};
     Handle handleDragged;
     
-    const bool pointIsWithin(SplineOscillatorPoint* p, const Rectangle<double>& withinRect, bool* overSubPoints) const {
+    const bool pointIsWithin(SplineOscillatorPoint* p, const juce::Rectangle<double>& withinRect, bool* overSubPoints) const {
         overSubPoints[0] = overSubPoints[1] = overSubPoints[2] = false;
         
         overSubPoints[0] = isWithinRect(p->x, p->y, withinRect);
@@ -356,7 +357,7 @@ private:
                 }
             }
             
-            Rectangle<double> fullHeightMarking = {left, 0., right-left, firstPoint->maxY};
+            juce::Rectangle<double> fullHeightMarking = {left, 0., right-left, firstPoint->maxY};
             for(const auto& point : getAllPoints()) {
                 if(isWithinRect(point.getX(), point.getY(), fullHeightMarking)) {
                     if(point.getY() > down +1) {
@@ -1280,7 +1281,7 @@ void SplineOscillatorEditor::paint(Graphics& g) {
         }
         
         if(!squareMarking->initialMarking) {
-            for(const Rectangle<double>& rect : squareMarking->getHandles()) {
+            for(const juce::Rectangle<double>& rect : squareMarking->getHandles()) {
                 g.setColour(getColors()->color2.withAlpha((uint8)196));
                 g.fillRect(rect.toFloat());
                 g.setColour(getColors()->color3);

@@ -68,7 +68,7 @@ void BigWaveShower::paint(Graphics& g) {
         shouldClearImage = false;
     }
     
-    vector<const Path> paths[2];
+    vector<Path> paths[2];
     const int nrOfChannels = 2;//TODO: don't hardcode to stereo
     Graphics imageGraphics(image);
 
