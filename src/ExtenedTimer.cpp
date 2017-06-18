@@ -23,7 +23,7 @@ ExtendedTimer::~ExtendedTimer() {
     }
 }
 
-void ExtendedTimer::setTimeout(function<void()> cb, const int64_t timeMs, const int id) {
+void ExtendedTimer::setTimeout(function<void()> cb_in, const int64_t timeMs, const int id) {
     const ScopedLock sl (ETlock);
     int i = 0;
     if (id != 0) {
@@ -46,7 +46,7 @@ void ExtendedTimer::setTimeout(function<void()> cb, const int64_t timeMs, const 
     
     CB c;
     c.id = id;
-    c.cb = cb;
+    c.cb = cb_in;
     c.time = then;
     c.caller = this;
     const ScopedLock arl(addRemoveLock);
