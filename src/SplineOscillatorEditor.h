@@ -207,7 +207,7 @@ class SquareMarking;
 class SplineOscillatorEditor : public Component/*, public PointInfoTimerListener*/, public SliderListener, public DragAndDropTarget
 {
 public:
-    SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in, ComponentRepaintTimer& repaintTimer_in);
+    SplineOscillatorEditor(String name, EventAggregator* eventAggregator_in, const ColorSet* colors_in, double* splineDataParams_in, shared_ptr<ComponentRepaintTimer> repaintTimer_in);
     ~SplineOscillatorEditor();
     
     void init();
@@ -235,13 +235,13 @@ public:
     virtual void itemDragEnter (const SourceDetails& dragSourceDetails) override {
         DBUG(("%s", dragSourceDetails.sourceComponent->getName().toRawUTF8()));
         draggedOver = true;
-        repaintTimer.addComponent(this);
+        repaintTimer->addComponent(this);
     }
     
     virtual void itemDragExit (const SourceDetails& dragSourceDetails) override {
         DBUG(("%s", dragSourceDetails.sourceComponent->getName().toRawUTF8()));
         draggedOver = false;
-        repaintTimer.removeComponent(this);
+        repaintTimer->removeComponent(this);
         eventAggregator->sendEvent(EVENT_NEED_REDRAW, 1);
     }
     
@@ -263,7 +263,7 @@ public:
         
         
         draggedOver = false;
-        repaintTimer.removeComponent(this);
+        repaintTimer->removeComponent(this);
         eventAggregator->sendEvent(EVENT_NEED_REDRAW, 1);
 
         if(pathOK) {
@@ -305,7 +305,7 @@ protected:
 
     virtual void paint (Graphics& g) override;
 private:
-    ComponentRepaintTimer& repaintTimer; //not normally used but can be temporarily registered during dragging etc.
+    shared_ptr<ComponentRepaintTimer> repaintTimer; //not normally used but can be temporarily registered during dragging etc.
     const String fileEnding = ".enveloprshape"; //If used for more project this must be settable from constructor
     bool draggedOver = false;
     bool dragBlink = false;
